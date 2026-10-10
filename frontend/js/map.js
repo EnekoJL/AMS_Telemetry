@@ -1,6 +1,8 @@
 /**
  * Leaflet Track Map with Smooth Green-to-Pink Speed Gradient & Vehicle Cursor.
- * Default Layer: High-Resolution Satellite Imagery (Esri World Imagery).
+ * - Ultra-reliable HD Satellite Imagery (Google Maps Satellite default + Esri World Imagery fallback)
+ * - Seamless SVG vector rendering (prevents Canvas clipping & disappearing segments on zoom)
+ * - Pre-buffered tile loading (keepBuffer: 6) to eliminate black unloaded tiles.
  */
 
 import { speedToColor } from "./colormap.js";
@@ -15,7 +17,6 @@ export class TrackMap {
     this.points = [];
     this.minSpeed = 0;
     this.maxSpeed = 350;
-    this.canvasRenderer = null;
 
     this.initMap();
   }
@@ -24,47 +25,69 @@ export class TrackMap {
     const container = document.getElementById(this.containerId);
     if (!container) return;
 
-    // Use shared hardware-accelerated Canvas renderer
-    this.canvasRenderer = L.canvas({ padding: 0.5 });
-
+    // Use native vector SVG renderer (preferCanvas: false) so polyline segments
+    // NEVER get clipped or disappear on zoom transitions
     this.map = L.map(this.containerId, {
       zoomControl: true,
       attributionControl: false,
-      preferCanvas: true,
-      renderer: this.canvasRenderer,
-    }).setView([41.07949, -0.20074], 15);
+      preferCanvas: false,
+      wheelPxPerZoomLevel: 100,
+    }).setView([41.07949, -0.20074], 16);
 
-    // 1. High-Res Satellite Map: Esri World Imagery (DEFAULT ACTIVE)
-    const satelliteTileLayer = L.tileLayer(
-      "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+    // 1. Google Satellite HD (Default: Ultra-fast worldwide CDN, zero black tiles, up to zoom 20)
+    const googleSatelliteLayer = L.tileLayer(
+      "https://{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}",
       {
-        maxZoom: 19,
-        attribution: "Tiles &copy; Esri, Maxar, Earthstar Geographics",
+        maxZoom: 20,
+        maxNativeZoom: 20,
+        subdomains: ["mt0", "mt1", "mt2", "mt3"],
+        keepBuffer: 6,
+        updateWhenZooming: false,
+        updateWhenIdle: false,
+        attribution: "&copy; Google Maps",
       }
     );
 
-    // 2. Dark Base Map: Esri World Dark Gray Base
+    // 2. Esri World Imagery (High-Resolution Satellite Alternative)
+    const esriSatelliteLayer = L.tileLayer(
+      "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+      {
+        maxZoom: 19,
+        maxNativeZoom: 18,
+        keepBuffer: 6,
+        updateWhenZooming: false,
+        attribution: "Tiles &copy; Esri, Maxar",
+      }
+    );
+
+    // 3. Dark Base Map: Esri World Dark Gray Base
     const darkGrayTileLayer = L.tileLayer(
       "https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}",
       {
         maxZoom: 16,
-        attribution: "Tiles &copy; Esri &mdash; Esri, DeLorme, NAVTEQ",
+        maxNativeZoom: 16,
+        keepBuffer: 6,
+        updateWhenZooming: false,
+        attribution: "Tiles &copy; Esri",
       }
     );
 
-    // 3. OpenStreetMap with Dark Filter fallback
+    // 4. OpenStreetMap with Dark Filter fallback
     const osmDarkTileLayer = L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
       maxZoom: 19,
+      maxNativeZoom: 19,
+      keepBuffer: 6,
       className: "osm-dark-fallback",
       attribution: "&copy; OpenStreetMap contributors",
     });
 
-    // Add SATELLITE as the primary default layer
-    satelliteTileLayer.addTo(this.map);
+    // Set Google Satellite as primary default layer
+    googleSatelliteLayer.addTo(this.map);
 
     // Add interactive layer selector (top right)
     const baseMaps = {
-      "Satélite Circuito (Default)": satelliteTileLayer,
+      "Satélite Google (HD Rápido)": googleSatelliteLayer,
+      "Satélite Esri (Detalle)": esriSatelliteLayer,
       "Oscuro Motorsport": darkGrayTileLayer,
       "OpenStreetMap": osmDarkTileLayer,
     };
@@ -128,28 +151,38 @@ export class TrackMap {
 
     this.trackLayerGroup.clearLayers();
 
-    // 1. Draw continuous dark track baseline (guarantees clear road visibility)
+    // 1. Draw continuous dark track baseline (guarantees seamless, unbreakable road visibility)
     const allCoords = points.map((p) => [p.lat, p.lon]);
     L.polyline(allCoords, {
-      renderer: this.canvasRenderer,
       color: "#0a0f18",
-      weight: 9,
+      weight: 8,
       opacity: 0.95,
+      lineCap: "round",
       lineJoin: "round",
     }).addTo(this.trackLayerGroup);
 
-    // 2. Group consecutive points into continuous colored line segments (60 FPS)
-    const NUM_BINS = 32;
+    // 2. Smooth speeds slightly to prevent high-frequency noise from fragmenting lines
+    const smoothedSpeeds = [];
+    for (let i = 0; i < points.length; i++) {
+      const prev = points[Math.max(0, i - 1)].speed_kmh;
+      const curr = points[i].speed_kmh;
+      const next = points[Math.min(points.length - 1, i + 1)].speed_kmh;
+      smoothedSpeeds.push((prev + curr * 2 + next) / 4.0);
+    }
+
+    // 3. Group consecutive points into seamless overlapping colored SVG segments
+    const NUM_BINS = 24;
     let currentBin = -1;
     let currentSegment = [];
 
     for (let i = 0; i < points.length; i++) {
       const p = points[i];
-      const norm = Math.max(0, Math.min(1, (p.speed_kmh - minSpeed) / (maxSpeed - minSpeed || 1)));
+      const speed = smoothedSpeeds[i];
+      const norm = Math.max(0, Math.min(1, (speed - minSpeed) / (maxSpeed - minSpeed || 1)));
       const bin = Math.min(NUM_BINS - 1, Math.floor(norm * NUM_BINS));
 
       if (bin !== currentBin && currentSegment.length > 0) {
-        // Close previous segment (include current point so lines join seamlessly)
+        // Close previous segment (include current point so segments connect seamlessly with zero gaps)
         currentSegment.push([p.lat, p.lon]);
 
         const speedNorm = (currentBin + 0.5) / NUM_BINS;
@@ -157,7 +190,6 @@ export class TrackMap {
         const color = speedToColor(approxSpeed, minSpeed, maxSpeed);
 
         L.polyline(currentSegment, {
-          renderer: this.canvasRenderer,
           color: color,
           weight: 5,
           opacity: 0.95,
@@ -183,7 +215,6 @@ export class TrackMap {
       const color = speedToColor(approxSpeed, minSpeed, maxSpeed);
 
       L.polyline(currentSegment, {
-        renderer: this.canvasRenderer,
         color: color,
         weight: 5,
         opacity: 0.95,
@@ -192,7 +223,7 @@ export class TrackMap {
       }).addTo(this.trackLayerGroup);
     }
 
-    // 3. Add Start / Finish flag marker
+    // 4. Add Start / Finish flag marker
     const startIcon = L.divIcon({
       className: "start-gate-wrapper",
       html: `<div class="start-gate-dot" title="Salida / Meta"></div>`,
@@ -204,18 +235,18 @@ export class TrackMap {
       zIndexOffset: 1500,
     }).addTo(this.trackLayerGroup);
 
-    // 4. Position vehicle cursor at start
+    // 5. Position vehicle cursor at start
     this.setCursorPosition(points[0]);
 
-    // 5. Force Leaflet to update layout & fit bounds
+    // 6. Force Leaflet to update layout & fit bounds
     this.invalidateSize();
     setTimeout(() => {
       this.invalidateSize();
       const bounds = L.latLngBounds(allCoords);
       if (bounds.isValid()) {
-        this.map.fitBounds(bounds, { padding: [35, 35], maxZoom: 18 });
+        this.map.fitBounds(bounds, { padding: [30, 30], maxZoom: 18 });
       }
-    }, 60);
+    }, 80);
   }
 
   setCursorPosition(point) {
