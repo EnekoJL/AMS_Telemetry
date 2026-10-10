@@ -23,12 +23,11 @@ export class TelemetryHUD {
     // Live HUD elements
     this.speedKmhEl = document.getElementById("hud-speed-kmh");
     this.speedMsEl = document.getElementById("hud-speed-ms");
-    this.timeRelEl = document.getElementById("hud-time-rel");
+    this.metricSpeedEl = document.getElementById("hud-metric-speed");
     this.distEl = document.getElementById("hud-dist");
     this.utcEl = document.getElementById("hud-utc");
     this.accelEl = document.getElementById("hud-accel");
     this.courseEl = document.getElementById("hud-course");
-    this.coordsEl = document.getElementById("hud-coords");
   }
 
   updateSessionSummary(summary) {
@@ -46,9 +45,12 @@ export class TelemetryHUD {
   updateInstant(point) {
     if (!point) return;
 
+    // Big Speed Gauge
     if (this.speedKmhEl) this.speedKmhEl.textContent = point.speed_kmh.toFixed(1);
     if (this.speedMsEl) this.speedMsEl.textContent = `${point.speed_ms.toFixed(1)} m/s`;
-    if (this.timeRelEl) this.timeRelEl.textContent = `+${point.rel_time_s.toFixed(2)}s`;
+
+    // Digital Grid Metrics
+    if (this.metricSpeedEl) this.metricSpeedEl.textContent = `${point.speed_kmh.toFixed(1)} km/h`;
     if (this.distEl) this.distEl.textContent = `${point.cum_dist_m.toFixed(0)} m`;
     if (this.utcEl) this.utcEl.textContent = point.utc_time;
 
@@ -62,10 +64,6 @@ export class TelemetryHUD {
     if (this.courseEl) {
       const card = courseToCardinal(point.course_deg);
       this.courseEl.textContent = `${point.course_deg.toFixed(0)}° (${card})`;
-    }
-
-    if (this.coordsEl) {
-      this.coordsEl.textContent = `${point.lat.toFixed(5)}, ${point.lon.toFixed(5)}`;
     }
   }
 }

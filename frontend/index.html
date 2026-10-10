@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>AMS Telemetry Studio — Motorsport Analytics</title>
 
-  <!-- Vendor CSS (Local with CDN Fallback) -->
+  <!-- Vendor CSS (Local) -->
   <link rel="stylesheet" href="/static/vendor/leaflet.css" />
   <link rel="stylesheet" href="/static/vendor/uPlot.min.css" />
 
@@ -89,12 +89,12 @@
           <!-- DIGITAL METRICS GRID -->
           <div class="hud-metrics-grid">
             <div class="metric-cell">
-              <div class="metric-cell-label">Tiempo Relativo</div>
-              <div class="metric-cell-value" id="hud-time-rel">+0.00s</div>
+              <div class="metric-cell-label">Velocidad (km/h)</div>
+              <div class="metric-cell-value" id="hud-metric-speed" style="color: var(--accent-green);">0.0 km/h</div>
             </div>
             <div class="metric-cell">
-              <div class="metric-cell-label">Distancia Pista</div>
-              <div class="metric-cell-value" id="hud-dist">0 m</div>
+              <div class="metric-cell-label">Distancia Recorrida</div>
+              <div class="metric-cell-value" id="hud-dist" style="color: var(--accent-pink);">0 m</div>
             </div>
             <div class="metric-cell">
               <div class="metric-cell-label">Aceleración Long.</div>
@@ -110,11 +110,6 @@
           <div class="metric-cell">
             <div class="metric-cell-label">Hora UTC (GPS)</div>
             <div class="metric-cell-value" id="hud-utc" style="font-size: 15px;">—</div>
-          </div>
-
-          <div class="metric-cell">
-            <div class="metric-cell-label">Coordenadas Lat / Lon</div>
-            <div class="metric-cell-value" id="hud-coords" style="font-size: 13px;">—</div>
           </div>
 
           <!-- SPEED GRADIENT LEGEND -->
@@ -139,7 +134,10 @@
           </div>
 
           <div class="chart-axis-toggles">
-            <span style="font-size: 10px; color: var(--text-muted); margin-right: 4px;">Eje Horizontal:</span>
+            <button class="btn" id="btn-reset-zoom" style="padding: 2px 8px; font-size: 10px;" title="Restablecer el zoom de la gráfica a escala completa">
+              Restablecer Zoom
+            </button>
+            <span style="font-size: 10px; color: var(--text-muted); margin-left: 6px; margin-right: 4px;">Eje Horizontal:</span>
             <button class="toggle-btn active" id="toggle-time">Tiempo (s)</button>
             <button class="toggle-btn" id="toggle-dist">Distancia (m)</button>
           </div>

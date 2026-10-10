@@ -1,6 +1,6 @@
 /**
  * Leaflet Track Map with Smooth Green-to-Pink Speed Gradient & Vehicle Cursor.
- * Zero watermark map tiles (Esri Dark Gray + Esri Satellite).
+ * Default Layer: High-Resolution Satellite Imagery (Esri World Imagery).
  */
 
 import { speedToColor } from "./colormap.js";
@@ -34,21 +34,21 @@ export class TrackMap {
       renderer: this.canvasRenderer,
     }).setView([41.07949, -0.20074], 15);
 
-    // 1. Primary Dark Base Map: Esri World Dark Gray Base (NO API KEY REQUIRED, NO WATERMARK)
-    const darkGrayTileLayer = L.tileLayer(
-      "https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}",
-      {
-        maxZoom: 19,
-        attribution: "Tiles &copy; Esri &mdash; Esri, DeLorme, NAVTEQ",
-      }
-    );
-
-    // 2. High-Res Satellite Map: Esri World Imagery (NO API KEY REQUIRED)
+    // 1. High-Res Satellite Map: Esri World Imagery (DEFAULT ACTIVE)
     const satelliteTileLayer = L.tileLayer(
       "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
       {
         maxZoom: 19,
         attribution: "Tiles &copy; Esri, Maxar, Earthstar Geographics",
+      }
+    );
+
+    // 2. Dark Base Map: Esri World Dark Gray Base
+    const darkGrayTileLayer = L.tileLayer(
+      "https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}",
+      {
+        maxZoom: 16,
+        attribution: "Tiles &copy; Esri &mdash; Esri, DeLorme, NAVTEQ",
       }
     );
 
@@ -59,13 +59,13 @@ export class TrackMap {
       attribution: "&copy; OpenStreetMap contributors",
     });
 
-    // Add primary layer
-    darkGrayTileLayer.addTo(this.map);
+    // Add SATELLITE as the primary default layer
+    satelliteTileLayer.addTo(this.map);
 
     // Add interactive layer selector (top right)
     const baseMaps = {
+      "Satélite Circuito (Default)": satelliteTileLayer,
       "Oscuro Motorsport": darkGrayTileLayer,
-      "Satélite Circuito": satelliteTileLayer,
       "OpenStreetMap": osmDarkTileLayer,
     };
     L.control.layers(baseMaps, null, { position: "topright" }).addTo(this.map);
@@ -132,9 +132,9 @@ export class TrackMap {
     const allCoords = points.map((p) => [p.lat, p.lon]);
     L.polyline(allCoords, {
       renderer: this.canvasRenderer,
-      color: "#1c283d",
-      weight: 8,
-      opacity: 0.9,
+      color: "#0a0f18",
+      weight: 9,
+      opacity: 0.95,
       lineJoin: "round",
     }).addTo(this.trackLayerGroup);
 
@@ -213,7 +213,7 @@ export class TrackMap {
       this.invalidateSize();
       const bounds = L.latLngBounds(allCoords);
       if (bounds.isValid()) {
-        this.map.fitBounds(bounds, { padding: [35, 35], maxZoom: 17 });
+        this.map.fitBounds(bounds, { padding: [35, 35], maxZoom: 18 });
       }
     }, 60);
   }

@@ -102,6 +102,14 @@ class TelemetryStudioApp {
       });
     }
 
+    // Reset zoom button
+    const btnResetZoom = document.getElementById("btn-reset-zoom");
+    if (btnResetZoom) {
+      btnResetZoom.addEventListener("click", () => {
+        this.chart.resetZoom();
+      });
+    }
+
     // Load sample session button
     const btnSample = document.getElementById("btn-load-sample");
     if (btnSample) {

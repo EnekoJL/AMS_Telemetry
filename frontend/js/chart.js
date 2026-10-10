@@ -1,6 +1,6 @@
 /**
  * High-performance Speed Telemetry Chart using uPlot.
- * Fixed scale ranges (0 to 400 km/h), Neon Green curve & Hot Pink cursor.
+ * Drag/Wheel Zoom support, fixed 0 to 400 km/h scale, and direct instant speed tracking.
  */
 
 export class TelemetryChart {
@@ -44,6 +44,35 @@ export class TelemetryChart {
     return [xValues, speedValues];
   }
 
+  findClosestIndex(xVal) {
+    if (!this.points.length) return 0;
+    const isTime = this.mode === "time";
+    let low = 0;
+    let high = this.points.length - 1;
+
+    while (low <= high) {
+      const mid = (low + high) >> 1;
+      const val = isTime ? this.points[mid].rel_time_s : this.points[mid].cum_dist_m;
+      if (val < xVal) low = mid + 1;
+      else if (val > xVal) high = mid - 1;
+      else return mid;
+    }
+
+    if (low >= this.points.length) return this.points.length - 1;
+    if (high < 0) return 0;
+    const vLow = isTime ? this.points[low].rel_time_s : this.points[low].cum_dist_m;
+    const vHigh = isTime ? this.points[high].rel_time_s : this.points[high].cum_dist_m;
+    return Math.abs(vLow - xVal) < Math.abs(vHigh - xVal) ? low : high;
+  }
+
+  resetZoom() {
+    if (!this.uplot || !this.points.length) return;
+    const maxX = this.mode === "time"
+      ? (this.points[this.points.length - 1].rel_time_s || 100)
+      : (this.points[this.points.length - 1].cum_dist_m || 1000);
+    this.uplot.setScale("x", { min: 0, max: Math.ceil(maxX * 1.02) });
+  }
+
   render() {
     if (!this.container || !this.points.length) return;
 
@@ -74,7 +103,11 @@ export class TelemetryChart {
       height: height,
       padding: [12, 24, 8, 12],
       cursor: {
-        drag: { setScale: false },
+        drag: {
+          x: true,        // Enable horizontal box drag-zoom
+          y: false,
+          setScale: true, // Automatically update x-axis scale on drag release
+        },
         sync: { key: "ams_telemetry" },
         points: {
           size: 9,
@@ -82,21 +115,6 @@ export class TelemetryChart {
           stroke: "#ff007f", // Hot Racing Pink hover point
           fill: "#ffffff",
         },
-      },
-      hooks: {
-        setCursor: [
-          (u) => {
-            const idx = u.cursor.idx;
-            if (idx !== null && idx !== undefined && idx >= 0 && idx < this.points.length) {
-              if (idx !== this.currentIndex) {
-                this.currentIndex = idx;
-                if (this.onCursorMove) {
-                  this.onCursorMove(idx);
-                }
-              }
-            }
-          },
-        ],
       },
       scales: {
         x: {
@@ -126,7 +144,7 @@ export class TelemetryChart {
           font: "11px monospace",
           grid: { stroke: "#1c283d", width: 1 },
           ticks: { stroke: "#243048", width: 1 },
-          values: (u, vals) => vals.map((v) => `${Math.round(v)} km/h`),
+          values: (u, vals) => `${Math.round(vals)} km/h`,
         },
       ],
       series: [
@@ -143,6 +161,53 @@ export class TelemetryChart {
     };
 
     this.uplot = new uPlot(opts, data, this.container);
+
+    // Attach direct mousemove listener to overlay for 100% reliable instant speed updates
+    if (this.uplot.over) {
+      this.uplot.over.addEventListener("mousemove", (e) => {
+        if (!this.uplot || !this.points.length) return;
+        const bbox = this.uplot.over.getBoundingClientRect();
+        const left = e.clientX - bbox.left;
+        if (left >= 0 && left <= bbox.width) {
+          const xVal = this.uplot.posToVal(left, "x");
+          const idx = this.findClosestIndex(xVal);
+          if (idx >= 0 && idx < this.points.length && idx !== this.currentIndex) {
+            this.currentIndex = idx;
+            if (this.onCursorMove) {
+              this.onCursorMove(idx);
+            }
+          }
+        }
+      });
+
+      // Double-click on chart canvas resets zoom
+      this.uplot.over.addEventListener("dblclick", () => {
+        this.resetZoom();
+      });
+
+      // Mouse wheel zoom plugin
+      this.uplot.over.addEventListener("wheel", (e) => {
+        e.preventDefault();
+        const bbox = this.uplot.over.getBoundingClientRect();
+        const left = e.clientX - bbox.left;
+        const xVal = this.uplot.posToVal(left, "x");
+        const xMin = this.uplot.scales.x.min;
+        const xMax = this.uplot.scales.x.max;
+        const xRange = xMax - xMin;
+
+        const factor = e.deltaY < 0 ? 0.8 : 1.25;
+        const newRange = xRange * factor;
+
+        // Keep centered around mouse cursor
+        const ratio = (xVal - xMin) / (xRange || 1);
+        let newMin = Math.max(0, xVal - newRange * ratio);
+        let newMax = newMin + newRange;
+
+        if (newRange > 2) {
+          this.uplot.setScale("x", { min: newMin, max: newMax });
+        }
+      }, { passive: false });
+    }
   }
 
   setCursorIndex(idx) {
