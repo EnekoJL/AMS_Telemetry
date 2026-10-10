@@ -1,17 +1,20 @@
 /**
  * Multi-Channel Telemetry Synchronized Stacked Charts.
- * MoTeC / AiM / Bosch Motorsport style with 60 FPS linked crosshair and synchronized zoom.
+ * MoTeC / AiM / Bosch Motorsport style with 60 FPS linked crosshair,
+ * reliable drag-zoom across all channels, and map/HUD synchronization.
  */
 
 export class MultiTelemetryCharts {
-  constructor(containerId) {
+  constructor(containerId, onPointHover) {
     this.container = document.getElementById(containerId);
+    this.onPointHover = onPointHover;
     this.charts = {};
     this.syncGroup = uPlot.sync("multi_telemetry");
     this.sessionData = null;
     this.channels = null;
     this.xMin = 0;
     this.xMax = 100;
+    this._zooming = false;
 
     // Numerical readout element caches
     this.readouts = {
@@ -51,7 +54,7 @@ export class MultiTelemetryCharts {
     this.createBatteryChart();
     this.createThermalsChart();
 
-    // Ensure sizes are crisp
+    // Ensure sizes match container
     this.resize();
   }
 
@@ -65,9 +68,43 @@ export class MultiTelemetryCharts {
   }
 
   getContainerWidth() {
-    if (!this.container) return 800;
-    const w = this.container.clientWidth;
-    return Math.max(300, w - 24); // Account for padding
+    const parent = document.querySelector(".charts-scroll-container");
+    if (parent && parent.clientWidth > 0) {
+      return Math.max(300, parent.clientWidth - 48);
+    }
+    return Math.max(300, (window.innerWidth || 800) - 48);
+  }
+
+  zoomAll(min, max) {
+    if (this._zooming || min == null || max == null || isNaN(min) || isNaN(max)) return;
+    if (min >= max || (max - min) < 0.5) return;
+
+    this._zooming = true;
+    try {
+      const clampedMin = Math.max(this.xMin, min);
+      const clampedMax = Math.min(this.xMax, max);
+
+      Object.values(this.charts).forEach((u) => {
+        if (u && typeof u.setScale === "function") {
+          u.setScale("x", { min: clampedMin, max: clampedMax });
+        }
+      });
+    } finally {
+      this._zooming = false;
+    }
+  }
+
+  resetZoom() {
+    this._zooming = true;
+    try {
+      Object.values(this.charts).forEach((u) => {
+        if (u && typeof u.setScale === "function") {
+          u.setScale("x", { min: this.xMin, max: this.xMax });
+        }
+      });
+    } finally {
+      this._zooming = false;
+    }
   }
 
   createDynamicsChart() {
@@ -83,8 +120,6 @@ export class MultiTelemetryCharts {
       return;
     }
 
-    // Prepare unified or correlated time array
-    // If inverter is available at 50 Hz, use inverter time base; otherwise GPS
     let xData = [];
     let speedData = [];
     let rpmData = [];
@@ -92,33 +127,46 @@ export class MultiTelemetryCharts {
     if (hasInv) {
       xData = this.channels.inverter.map((p) => p.rel_time_s);
       rpmData = this.channels.inverter.map((p) => p.motor_rpm);
-      // Interpolate speed from GPS or approximate
       if (hasGps) {
-        speedData = this.interpolateSeries(xData, this.channels.gps.map(p => p.rel_time_s), this.channels.gps.map(p => p.speed_kmh));
+        speedData = this.interpolateSeries(xData, this.channels.gps.map((p) => p.rel_time_s), this.channels.gps.map((p) => p.speed_kmh));
       } else {
-        speedData = rpmData.map(r => r / 30.0);
+        speedData = rpmData.map((r) => r / 30.0);
       }
     } else {
       xData = this.channels.gps.map((p) => p.rel_time_s);
       speedData = this.channels.gps.map((p) => p.speed_kmh);
-      rpmData = speedData.map(s => Math.round(s * 30.0));
+      rpmData = speedData.map((s) => Math.round(s * 30.0));
     }
 
     const opts = {
       width: this.getContainerWidth(),
-      height: 160,
+      height: 150,
       cursor: {
         sync: { key: this.syncGroup.key, setSeries: true },
-        drag: { setScale: true, x: true, y: false },
+        drag: { x: true, y: false, setScale: true },
       },
       hooks: {
-        setCursor: [(u) => this.handleCursorMove(u.cursor.idx, xData[u.cursor.idx])],
-        setScale: [(u, key) => { if (key === "x") this.syncZoom(u.scales.x.min, u.scales.x.max, u); }],
+        setSelect: [
+          (u) => {
+            if (u.select && u.select.width > 5) {
+              const min = u.posToVal(u.select.left, "x");
+              const max = u.posToVal(u.select.left + u.select.width, "x");
+              this.zoomAll(min, max);
+            }
+          },
+        ],
+        setCursor: [
+          (u) => {
+            if (u.cursor.idx !== null && u.cursor.idx !== undefined) {
+              this.handleCursorMove(u.cursor.idx, xData[u.cursor.idx]);
+            }
+          },
+        ],
       },
       scales: {
         x: { time: false, min: this.xMin, max: this.xMax },
-        kmh: { auto: true, range: [0, 360] },
-        rpm: { auto: true, range: [0, 12000] },
+        kmh: { auto: true },
+        rpm: { auto: true },
       },
       axes: [
         {
@@ -132,7 +180,7 @@ export class MultiTelemetryCharts {
           stroke: "#00ff88",
           size: 55,
           grid: { stroke: "#1c283d", width: 1 },
-          values: (u, vals) => vals.map((v) => `${Math.round(v)}`),
+          values: (u, vals) => `${Math.round(vals)} km/h`,
         },
         {
           scale: "rpm",
@@ -140,7 +188,7 @@ export class MultiTelemetryCharts {
           stroke: "#ff007f",
           size: 55,
           grid: { show: false },
-          values: (u, vals) => vals.map((v) => `${Math.round(v)}`),
+          values: (u, vals) => `${Math.round(vals)}`,
         },
       ],
       series: [
@@ -160,7 +208,10 @@ export class MultiTelemetryCharts {
       ],
     };
 
-    this.charts.dynamics = new uPlot(opts, [xData, speedData, rpmData], el);
+    const chart = new uPlot(opts, [xData, speedData, rpmData], el);
+    this.charts.dynamics = chart;
+
+    el.addEventListener("dblclick", () => this.resetZoom());
   }
 
   createSuspensionChart() {
@@ -179,18 +230,32 @@ export class MultiTelemetryCharts {
 
     const opts = {
       width: this.getContainerWidth(),
-      height: 160,
+      height: 150,
       cursor: {
         sync: { key: this.syncGroup.key, setSeries: true },
-        drag: { setScale: true, x: true, y: false },
+        drag: { x: true, y: false, setScale: true },
       },
       hooks: {
-        setCursor: [(u) => this.handleCursorMove(u.cursor.idx, xData[u.cursor.idx])],
-        setScale: [(u, key) => { if (key === "x") this.syncZoom(u.scales.x.min, u.scales.x.max, u); }],
+        setSelect: [
+          (u) => {
+            if (u.select && u.select.width > 5) {
+              const min = u.posToVal(u.select.left, "x");
+              const max = u.posToVal(u.select.left + u.select.width, "x");
+              this.zoomAll(min, max);
+            }
+          },
+        ],
+        setCursor: [
+          (u) => {
+            if (u.cursor.idx !== null && u.cursor.idx !== undefined) {
+              this.handleCursorMove(u.cursor.idx, xData[u.cursor.idx]);
+            }
+          },
+        ],
       },
       scales: {
         x: { time: false, min: this.xMin, max: this.xMax },
-        mm: { auto: true, range: [0, 150] },
+        mm: { auto: true },
       },
       axes: [
         {
@@ -204,7 +269,7 @@ export class MultiTelemetryCharts {
           stroke: "#00ff88",
           size: 55,
           grid: { stroke: "#1c283d", width: 1 },
-          values: (u, vals) => vals.map((v) => `${Math.round(v)} mm`),
+          values: (u, vals) => `${Math.round(vals)} mm`,
         },
       ],
       series: [
@@ -224,7 +289,10 @@ export class MultiTelemetryCharts {
       ],
     };
 
-    this.charts.suspension = new uPlot(opts, [xData, forkData, shockData], el);
+    const chart = new uPlot(opts, [xData, forkData, shockData], el);
+    this.charts.suspension = chart;
+
+    el.addEventListener("dblclick", () => this.resetZoom());
   }
 
   createBatteryChart() {
@@ -243,19 +311,33 @@ export class MultiTelemetryCharts {
 
     const opts = {
       width: this.getContainerWidth(),
-      height: 160,
+      height: 150,
       cursor: {
         sync: { key: this.syncGroup.key, setSeries: true },
-        drag: { setScale: true, x: true, y: false },
+        drag: { x: true, y: false, setScale: true },
       },
       hooks: {
-        setCursor: [(u) => this.handleCursorMove(u.cursor.idx, xData[u.cursor.idx])],
-        setScale: [(u, key) => { if (key === "x") this.syncZoom(u.scales.x.min, u.scales.x.max, u); }],
+        setSelect: [
+          (u) => {
+            if (u.select && u.select.width > 5) {
+              const min = u.posToVal(u.select.left, "x");
+              const max = u.posToVal(u.select.left + u.select.width, "x");
+              this.zoomAll(min, max);
+            }
+          },
+        ],
+        setCursor: [
+          (u) => {
+            if (u.cursor.idx !== null && u.cursor.idx !== undefined) {
+              this.handleCursorMove(u.cursor.idx, xData[u.cursor.idx]);
+            }
+          },
+        ],
       },
       scales: {
         x: { time: false, min: this.xMin, max: this.xMax },
-        volt: { auto: true, range: [95, 120] },
-        amp: { auto: true, range: [-60, 240] },
+        volt: { auto: true },
+        amp: { auto: true },
       },
       axes: [
         {
@@ -269,7 +351,7 @@ export class MultiTelemetryCharts {
           stroke: "#00ff88",
           size: 55,
           grid: { stroke: "#1c283d", width: 1 },
-          values: (u, vals) => vals.map((v) => `${Math.round(v)} V`),
+          values: (u, vals) => `${Math.round(vals)} V`,
         },
         {
           scale: "amp",
@@ -277,7 +359,7 @@ export class MultiTelemetryCharts {
           stroke: "#ff007f",
           size: 55,
           grid: { show: false },
-          values: (u, vals) => vals.map((v) => `${Math.round(v)} A`),
+          values: (u, vals) => `${Math.round(vals)} A`,
         },
       ],
       series: [
@@ -297,7 +379,10 @@ export class MultiTelemetryCharts {
       ],
     };
 
-    this.charts.battery = new uPlot(opts, [xData, packVData, packIData], el);
+    const chart = new uPlot(opts, [xData, packVData, packIData], el);
+    this.charts.battery = chart;
+
+    el.addEventListener("dblclick", () => this.resetZoom());
   }
 
   createThermalsChart() {
@@ -314,7 +399,6 @@ export class MultiTelemetryCharts {
       return;
     }
 
-    // Determine reference time array
     let xData = [];
     if (hasInv) {
       xData = this.channels.inverter.map((p) => p.rel_time_s);
@@ -327,26 +411,40 @@ export class MultiTelemetryCharts {
     const motTemp = hasInv ? this.channels.inverter.map((p) => p.motor_temp_c) : xData.map(() => 45.0);
     const invTemp = hasInv ? this.channels.inverter.map((p) => p.inverter_temp_c) : xData.map(() => 40.0);
     const bmsTemp = hasBms
-      ? this.interpolateSeries(xData, this.channels.bms.map(p => p.rel_time_s), this.channels.bms.map(p => p.cell_temp_max_c))
+      ? this.interpolateSeries(xData, this.channels.bms.map((p) => p.rel_time_s), this.channels.bms.map((p) => p.cell_temp_max_c))
       : xData.map(() => 35.0);
     const mcuTemp = hasAdc
-      ? this.interpolateSeries(xData, this.channels.adc.map(p => p.rel_time_s), this.channels.adc.map(p => p.mcu_temp_c))
+      ? this.interpolateSeries(xData, this.channels.adc.map((p) => p.rel_time_s), this.channels.adc.map((p) => p.mcu_temp_c))
       : xData.map(() => 42.0);
 
     const opts = {
       width: this.getContainerWidth(),
-      height: 160,
+      height: 150,
       cursor: {
         sync: { key: this.syncGroup.key, setSeries: true },
-        drag: { setScale: true, x: true, y: false },
+        drag: { x: true, y: false, setScale: true },
       },
       hooks: {
-        setCursor: [(u) => this.handleCursorMove(u.cursor.idx, xData[u.cursor.idx])],
-        setScale: [(u, key) => { if (key === "x") this.syncZoom(u.scales.x.min, u.scales.x.max, u); }],
+        setSelect: [
+          (u) => {
+            if (u.select && u.select.width > 5) {
+              const min = u.posToVal(u.select.left, "x");
+              const max = u.posToVal(u.select.left + u.select.width, "x");
+              this.zoomAll(min, max);
+            }
+          },
+        ],
+        setCursor: [
+          (u) => {
+            if (u.cursor.idx !== null && u.cursor.idx !== undefined) {
+              this.handleCursorMove(u.cursor.idx, xData[u.cursor.idx]);
+            }
+          },
+        ],
       },
       scales: {
         x: { time: false, min: this.xMin, max: this.xMax },
-        celsius: { auto: true, range: [20, 80] },
+        celsius: { auto: true },
       },
       axes: [
         {
@@ -360,7 +458,7 @@ export class MultiTelemetryCharts {
           stroke: "#ff007f",
           size: 55,
           grid: { stroke: "#1c283d", width: 1 },
-          values: (u, vals) => vals.map((v) => `${Math.round(v)} °C`),
+          values: (u, vals) => `${Math.round(vals)} °C`,
         },
       ],
       series: [
@@ -392,7 +490,10 @@ export class MultiTelemetryCharts {
       ],
     };
 
-    this.charts.thermals = new uPlot(opts, [xData, motTemp, invTemp, bmsTemp, mcuTemp], el);
+    const chart = new uPlot(opts, [xData, motTemp, invTemp, bmsTemp, mcuTemp], el);
+    this.charts.thermals = chart;
+
+    el.addEventListener("dblclick", () => this.resetZoom());
   }
 
   interpolateSeries(targetX, sourceX, sourceY) {
@@ -461,34 +562,25 @@ export class MultiTelemetryCharts {
     if (this.readouts.tempInv) this.readouts.tempInv.textContent = ptInv ? `${ptInv.inverter_temp_c.toFixed(1)} °C` : "—";
     if (this.readouts.tempBms) this.readouts.tempBms.textContent = ptBms ? `${ptBms.cell_temp_max_c.toFixed(1)} °C` : "—";
     if (this.readouts.tempMcu) this.readouts.tempMcu.textContent = ptAdc ? `${ptAdc.mcu_temp_c.toFixed(1)} °C` : "—";
+
+    // Forward to Map & HUD
+    if (this.onPointHover && ptGps) {
+      this.onPointHover(ptGps);
+    }
   }
 
-  syncZoom(min, max, sourceChart) {
-    if (this._zooming) return;
-    this._zooming = true;
-    Object.values(this.charts).forEach((u) => {
-      if (u && u !== sourceChart) {
-        u.setScale("x", { min, max });
-      }
-    });
-    this._zooming = false;
-  }
-
-  resetZoom() {
-    this._zooming = true;
-    Object.values(this.charts).forEach((u) => {
-      if (u) {
-        u.setScale("x", { min: this.xMin, max: this.xMax });
-      }
-    });
-    this._zooming = false;
+  setCursorTime(relTimeS) {
+    if (!this.charts.dynamics) return;
+    const u = this.charts.dynamics;
+    const left = u.valToPos(relTimeS, "x");
+    u.setCursor({ left, top: 40 }, false);
   }
 
   resize() {
     const width = this.getContainerWidth();
     Object.values(this.charts).forEach((u) => {
       if (u && typeof u.setSize === "function") {
-        u.setSize({ width, height: 160 });
+        u.setSize({ width, height: 150 });
       }
     });
   }

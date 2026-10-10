@@ -39,7 +39,7 @@ html, body {
   user-select: none;
 }
 
-/* APP SHELL CONTAINER — Strict flexbox height management */
+/* APP SHELL CONTAINER */
 .studio-app {
   display: flex;
   flex-direction: column;
@@ -86,46 +86,6 @@ html, body {
   padding: 2px 7px;
   border-radius: 4px;
   border: 1px solid rgba(255, 0, 127, 0.45);
-}
-
-/* VIEW TABS IN HEADER */
-.view-tabs {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  margin-left: 12px;
-}
-
-.view-tab-btn {
-  background: var(--bg-card);
-  border: 1px solid var(--border-subtle);
-  color: var(--text-muted);
-  padding: 5px 12px;
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.5px;
-  border-radius: 6px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  transition: all 0.15s ease;
-}
-
-.view-tab-btn:hover {
-  background: var(--bg-card-hover);
-  color: var(--text-bright);
-}
-
-.view-tab-btn.active {
-  background: rgba(0, 255, 136, 0.12);
-  border-color: var(--accent-green);
-  color: var(--accent-green);
-  box-shadow: 0 0 10px rgba(0, 255, 136, 0.25);
-}
-
-.tab-icon {
-  font-size: 13px;
 }
 
 .session-chips {
@@ -190,6 +150,23 @@ html, body {
   color: var(--text-bright);
 }
 
+.btn-toggle-map {
+  background: rgba(0, 255, 136, 0.08);
+  border-color: rgba(0, 255, 136, 0.4);
+  color: var(--accent-green);
+}
+
+.btn-toggle-map:hover {
+  background: rgba(0, 255, 136, 0.18);
+  border-color: var(--accent-green);
+}
+
+.btn-toggle-map.active {
+  background: var(--accent-green);
+  color: var(--bg-darkest);
+  border-color: var(--accent-green);
+}
+
 .btn-primary {
   background: rgba(0, 255, 136, 0.15);
   border-color: var(--accent-green);
@@ -202,46 +179,44 @@ html, body {
   box-shadow: 0 0 12px rgba(0, 255, 136, 0.4);
 }
 
-/* MAIN WORKSPACE */
-.workspace-grid {
+/* =========================================================================
+ * UNIFIED WORKSPACE
+ * ========================================================================= */
+.workspace-unified {
   flex: 1 1 auto;
   display: flex;
   flex-direction: column;
   min-height: 0;
+  height: calc(100vh - 54px);
   overflow: hidden;
   position: relative;
 }
 
-/* INDIVIDUAL STUDIO VIEWS */
-.studio-view {
-  display: none;
-  flex: 1 1 auto;
-  width: 100%;
-  height: 100%;
-  min-height: 0;
-  position: relative;
-  overflow: hidden;
-}
-
-.studio-view.active {
+/* 1. COLLAPSIBLE MAP & HUD SECTION */
+.map-hud-collapsible {
+  flex: 0 0 330px;
+  height: 330px;
+  max-height: 330px;
   display: flex;
-  flex-direction: column;
-}
-
-/* TOP VIEW: MAP + TELEMETRY HUD */
-.map-view-container {
-  flex: 1 1 auto;
-  display: flex;
-  min-height: 250px;
+  border-bottom: 1px solid var(--border-subtle);
   position: relative;
   overflow: hidden;
+  transition: max-height 0.28s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.22s ease;
+}
+
+.map-hud-collapsible.collapsed {
+  flex: 0 0 0px !important;
+  height: 0px !important;
+  max-height: 0px !important;
+  border-bottom: none !important;
+  opacity: 0;
+  pointer-events: none;
 }
 
 #track-map {
   flex: 1 1 auto;
   height: 100%;
   min-width: 0;
-  min-height: 250px;
   position: relative;
   background: #080c14;
 }
@@ -271,10 +246,10 @@ html, body {
   height: 100%;
   background: var(--bg-panel);
   border-left: 1px solid var(--border-subtle);
-  padding: 14px;
+  padding: 12px 14px;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 10px;
   overflow-y: auto;
 }
 
@@ -302,7 +277,7 @@ html, body {
   background: var(--bg-card);
   border: 1px solid var(--border-subtle);
   border-radius: 8px;
-  padding: 12px 14px;
+  padding: 10px 12px;
   position: relative;
   overflow: hidden;
 }
@@ -319,7 +294,7 @@ html, body {
 
 .gauge-val-big {
   font-family: var(--font-mono);
-  font-size: 38px;
+  font-size: 34px;
   font-weight: 800;
   line-height: 1;
   color: var(--accent-green);
@@ -335,27 +310,27 @@ html, body {
 
 .gauge-subvalue {
   font-family: var(--font-mono);
-  font-size: 13px;
+  font-size: 12px;
   color: var(--text-muted);
-  margin-top: 4px;
+  margin-top: 3px;
 }
 
 /* HUD DATA METRICS GRID */
 .hud-metrics-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 8px;
+  gap: 6px;
 }
 
 .metric-cell {
   background: var(--bg-card);
   border: 1px solid var(--border-subtle);
   border-radius: 6px;
-  padding: 8px 10px;
+  padding: 6px 8px;
 }
 
 .metric-cell-label {
-  font-size: 9px;
+  font-size: 8.5px;
   text-transform: uppercase;
   color: var(--text-muted);
   font-weight: 600;
@@ -364,7 +339,7 @@ html, body {
 
 .metric-cell-value {
   font-family: var(--font-mono);
-  font-size: 16px;
+  font-size: 14px;
   font-weight: 700;
   color: var(--text-bright);
   margin-top: 2px;
@@ -375,136 +350,46 @@ html, body {
   background: var(--bg-card);
   border: 1px solid var(--border-subtle);
   border-radius: 6px;
-  padding: 8px 10px;
+  padding: 6px 8px;
   margin-top: auto;
 }
 
 .legend-bar {
-  height: 7px;
+  height: 6px;
   border-radius: 3px;
   background: linear-gradient(to right, #00b050 0%, #00ff88 30%, #76ff03 55%, #ffd600 75%, #ff007f 100%);
-  margin: 6px 0 4px 0;
+  margin: 5px 0 3px 0;
 }
 
 .legend-labels {
   display: flex;
   justify-content: space-between;
   font-family: var(--font-mono);
-  font-size: 9px;
+  font-size: 8.5px;
   color: var(--text-muted);
 }
 
-/* BOTTOM SECTION: TELEMETRY CHARTS (TRACK VIEW) */
-.charts-view-container {
-  flex: 0 0 250px;
-  height: 250px;
-  min-height: 250px;
-  background: var(--bg-panel);
-  border-top: 1px solid var(--border-subtle);
+/* =========================================================================
+ * 2. STACKED MULTI-CHANNEL TELEMETRY SECTION
+ * ========================================================================= */
+.telemetry-charts-section {
+  flex: 1 1 auto;
   display: flex;
   flex-direction: column;
-  position: relative;
+  min-height: 0;
   overflow: hidden;
+  background: var(--bg-darkest);
 }
 
-.chart-toolbar {
+.charts-status-bar {
   flex: 0 0 34px;
   height: 34px;
-  background: var(--bg-card);
+  background: var(--bg-panel);
   border-bottom: 1px solid var(--border-subtle);
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 14px;
-}
-
-.chart-title {
-  font-size: 11px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.8px;
-  color: var(--text-main);
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.chart-channel-pill {
-  background: rgba(255, 0, 127, 0.15);
-  color: var(--accent-pink);
-  font-size: 10px;
-  font-weight: 700;
-  padding: 2px 6px;
-  border-radius: 4px;
-  border: 1px solid rgba(255, 0, 127, 0.4);
-}
-
-.chart-axis-toggles {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.toggle-btn {
-  background: transparent;
-  border: 1px solid var(--border-subtle);
-  color: var(--text-muted);
-  font-size: 10px;
-  font-weight: 600;
-  padding: 3px 8px;
-  border-radius: 4px;
-  cursor: pointer;
-}
-
-.toggle-btn.active {
-  background: var(--accent-green);
-  color: var(--bg-darkest);
-  border-color: var(--accent-green);
-  font-weight: 700;
-}
-
-.chart-stage {
-  flex: 1 1 auto;
-  width: 100%;
-  height: calc(100% - 34px);
-  position: relative;
-  overflow: hidden;
-}
-
-#telemetry-plot {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  width: 100%;
-  height: 100%;
-}
-
-/* =========================================================================
- * MULTI-CHANNEL TELEMETRY GRAPHS VIEW (MoTeC / AiM Motorsport Style)
- * ========================================================================= */
-.multi-graphs-scroll-wrapper {
-  flex: 1 1 auto;
-  width: 100%;
-  height: 100%;
-  overflow-y: auto;
-  overflow-x: hidden;
-  padding: 12px 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  background: var(--bg-darkest);
-}
-
-.multi-toolbar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  background: var(--bg-panel);
-  border: 1px solid var(--border-subtle);
-  border-radius: 6px;
-  padding: 8px 14px;
+  padding: 0 16px;
 }
 
 .channel-status-pills {
@@ -523,9 +408,9 @@ html, body {
 
 .ch-status-pill {
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 9.5px;
   font-weight: 700;
-  padding: 3px 8px;
+  padding: 2px 7px;
   border-radius: 4px;
   background: var(--bg-card);
   border: 1px solid var(--border-subtle);
@@ -539,42 +424,77 @@ html, body {
   box-shadow: 0 0 6px rgba(0, 255, 136, 0.2);
 }
 
-.multi-chart-card {
+.charts-toolbar-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.zoom-hint {
+  font-size: 10.5px;
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+.charts-scroll-container {
+  flex: 1 1 auto;
+  width: 100%;
+  height: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 10px 14px 16px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* STACKED TELEMETRY CARD */
+.telemetry-card {
   background: var(--bg-panel);
   border: 1px solid var(--border-subtle);
   border-radius: 8px;
-  padding: 10px 14px 12px 14px;
+  padding: 8px 12px 10px 12px;
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+  gap: 6px;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.3);
 }
 
-.multi-chart-header {
+.telemetry-card-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
   flex-wrap: wrap;
   gap: 8px;
   border-bottom: 1px solid var(--border-subtle);
-  padding-bottom: 6px;
+  padding-bottom: 5px;
 }
 
-.multi-chart-title-group {
+.card-title-group {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
 }
 
-.multi-chart-title {
-  font-size: 12px;
+.card-title {
+  font-size: 11.5px;
   font-weight: 800;
   text-transform: uppercase;
   letter-spacing: 0.8px;
   color: var(--text-bright);
 }
 
-.multi-readouts-group {
+.chart-channel-pill {
+  background: rgba(255, 0, 127, 0.15);
+  color: var(--accent-pink);
+  font-size: 9.5px;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 4px;
+  border: 1px solid rgba(255, 0, 127, 0.4);
+}
+
+.card-readouts-group {
   display: flex;
   align-items: center;
   gap: 12px;
@@ -600,14 +520,14 @@ html, body {
   color: var(--text-bright);
 }
 
-.multi-chart-body {
+.telemetry-card-body {
   width: 100%;
-  height: 160px;
+  height: 150px;
   position: relative;
   overflow: hidden;
 }
 
-.uplot-wrapper {
+.chart-render-target {
   width: 100%;
   height: 100%;
 }
@@ -627,6 +547,29 @@ html, body {
 /* Hide uPlot default DOM legend table */
 .u-legend {
   display: none !important;
+}
+
+/* =========================================================================
+ * UPLOT DRAG ZOOM SELECTION & CURSOR STYLING (MOTORSPORT NEON GREEN PRE-BOX)
+ * ========================================================================= */
+.u-select {
+  background: rgba(0, 255, 136, 0.22) !important;
+  border-left: 2px solid var(--accent-green) !important;
+  border-right: 2px solid var(--accent-green) !important;
+  border-top: 1.5px dashed rgba(0, 255, 136, 0.7) !important;
+  border-bottom: 1.5px dashed rgba(0, 255, 136, 0.7) !important;
+  box-shadow: 0 0 16px rgba(0, 255, 136, 0.35) !important;
+  position: absolute !important;
+  pointer-events: none !important;
+  z-index: 100 !important;
+}
+
+.u-hz .u-cursor-x, .u-vt .u-cursor-y {
+  border-right: 1.5px dashed var(--accent-pink) !important;
+}
+
+.u-hz .u-cursor-y, .u-vt .u-cursor-x {
+  border-bottom: 1.5px dashed var(--accent-pink) !important;
 }
 
 /* MAP VEHICLE CURSOR MARKER (HOT RACING PINK) */
@@ -687,27 +630,3 @@ html, body {
   font-weight: 700;
   color: var(--text-bright);
 }
-
-/* =========================================================================
- * UPLOT DRAG ZOOM SELECTION & CURSOR STYLING (MOTORSPORT NEON GREEN PRE-BOX)
- * ========================================================================= */
-.u-select {
-  background: rgba(0, 255, 136, 0.22) !important;
-  border-left: 2px solid var(--accent-green) !important;
-  border-right: 2px solid var(--accent-green) !important;
-  border-top: 1.5px dashed rgba(0, 255, 136, 0.7) !important;
-  border-bottom: 1.5px dashed rgba(0, 255, 136, 0.7) !important;
-  box-shadow: 0 0 16px rgba(0, 255, 136, 0.35) !important;
-  position: absolute !important;
-  pointer-events: none !important;
-  z-index: 100 !important;
-}
-
-.u-hz .u-cursor-x, .u-vt .u-cursor-y {
-  border-right: 1.5px dashed var(--accent-pink) !important;
-}
-
-.u-hz .u-cursor-y, .u-vt .u-cursor-x {
-  border-bottom: 1.5px dashed var(--accent-pink) !important;
-}
-
