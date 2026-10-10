@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AMS Telemetry Studio — Motorsport Analytics</title>
+
+  <!-- Vendor CSS (Local with CDN Fallback) -->
+  <link rel="stylesheet" href="/static/vendor/leaflet.css" />
+  <link rel="stylesheet" href="/static/vendor/uPlot.min.css" />
+
+  <!-- Studio Custom Motorsport CSS -->
+  <link rel="stylesheet" href="/static/css/studio.css" />
+</head>
+<body>
+  <div class="studio-app">
+    <!-- TOP NAVIGATION & STATUS BAR -->
+    <header class="top-header">
+      <div class="brand-section">
+        <div class="brand-logo">
+          AMS TELEMETRY STUDIO
+          <span class="badge-tag">STM32 BLACK-BOX</span>
+        </div>
+      </div>
+
+      <!-- SESSION SUMMARY CHIPS -->
+      <div class="session-chips">
+        <div class="chip">
+          <span class="chip-label">Sesión</span>
+          <span class="chip-value" id="chip-session-name">—</span>
+        </div>
+        <div class="chip">
+          <span class="chip-label">Duración</span>
+          <span class="chip-value" id="chip-duration">—</span>
+        </div>
+        <div class="chip">
+          <span class="chip-label">Distancia</span>
+          <span class="chip-value" id="chip-distance">—</span>
+        </div>
+        <div class="chip">
+          <span class="chip-label">Vel. Punta</span>
+          <span class="chip-value accent" id="chip-max-speed">—</span>
+        </div>
+        <div class="chip">
+          <span class="chip-label">Vel. Media</span>
+          <span class="chip-value" id="chip-avg-speed">—</span>
+        </div>
+        <div class="chip">
+          <span class="chip-label">Muestras</span>
+          <span class="chip-value" id="chip-points">—</span>
+        </div>
+      </div>
+
+      <!-- HEADER ACTION CONTROLS -->
+      <div class="header-actions">
+        <button class="btn" id="btn-load-sample" title="Cargar sesión de referencia de Motorland Aragón">
+          Muestra Aragón
+        </button>
+        <button class="btn btn-primary" id="btn-upload" title="Subir archivo .bin de la microSD">
+          Cargar Log .BIN
+        </button>
+        <input type="file" id="file-input" accept=".bin" style="display: none;" />
+      </div>
+    </header>
+
+    <!-- MAIN WORKSPACE -->
+    <main class="workspace-grid">
+      <!-- UPPER SECTION: TRACK MAP + TELEMETRY HUD -->
+      <section class="map-view-container">
+        <div id="track-map"></div>
+
+        <!-- TELEMETRY HUD SIDEBAR -->
+        <aside class="telemetry-hud">
+          <div class="hud-panel-title">
+            <span>Telemetría en Vivo</span>
+            <div class="live-dot" title="Sincronizado a 60 FPS"></div>
+          </div>
+
+          <!-- PRIMARY SPEED GAUGE -->
+          <div class="gauge-card-big">
+            <div class="metric-cell-label">Velocidad Instantánea</div>
+            <div style="display: flex; align-items: baseline;">
+              <span class="gauge-val-big" id="hud-speed-kmh">0.0</span>
+              <span class="gauge-unit">km/h</span>
+            </div>
+            <div class="gauge-subvalue" id="hud-speed-ms">0.0 m/s</div>
+          </div>
+
+          <!-- DIGITAL METRICS GRID -->
+          <div class="hud-metrics-grid">
+            <div class="metric-cell">
+              <div class="metric-cell-label">Tiempo Relativo</div>
+              <div class="metric-cell-value" id="hud-time-rel">+0.00s</div>
+            </div>
+            <div class="metric-cell">
+              <div class="metric-cell-label">Distancia Pista</div>
+              <div class="metric-cell-value" id="hud-dist">0 m</div>
+            </div>
+            <div class="metric-cell">
+              <div class="metric-cell-label">Aceleración Long.</div>
+              <div class="metric-cell-value" id="hud-accel">0.00 G</div>
+            </div>
+            <div class="metric-cell">
+              <div class="metric-cell-label">Rumbo / Heading</div>
+              <div class="metric-cell-value" id="hud-course">0° (N)</div>
+            </div>
+          </div>
+
+          <!-- POSITION & TIMESTAMP -->
+          <div class="metric-cell">
+            <div class="metric-cell-label">Hora UTC (GPS)</div>
+            <div class="metric-cell-value" id="hud-utc" style="font-size: 15px;">—</div>
+          </div>
+
+          <div class="metric-cell">
+            <div class="metric-cell-label">Coordenadas Lat / Lon</div>
+            <div class="metric-cell-value" id="hud-coords" style="font-size: 13px;">—</div>
+          </div>
+
+          <!-- SPEED GRADIENT LEGEND -->
+          <div class="speed-legend-box">
+            <div class="metric-cell-label">Gradiente de Velocidad en Trazado</div>
+            <div class="legend-bar"></div>
+            <div class="legend-labels">
+              <span>Lenta / Frenada</span>
+              <span>Media</span>
+              <span>Punta / Recta</span>
+            </div>
+          </div>
+        </aside>
+      </section>
+
+      <!-- LOWER SECTION: TELEMETRY CURVES (LINKED HOVER) -->
+      <section class="charts-view-container">
+        <div class="chart-toolbar">
+          <div class="chart-title">
+            Canal de Telemetría: Velocidad
+            <span class="chart-channel-pill">LOG_SRC_GPS_RMC (0x30)</span>
+          </div>
+
+          <div class="chart-axis-toggles">
+            <span style="font-size: 10px; color: var(--text-muted); margin-right: 4px;">Eje Horizontal:</span>
+            <button class="toggle-btn active" id="toggle-time">Tiempo (s)</button>
+            <button class="toggle-btn" id="toggle-dist">Distancia (m)</button>
+          </div>
+        </div>
+
+        <div class="chart-stage">
+          <div id="telemetry-plot"></div>
+        </div>
+      </section>
+    </main>
+
+    <!-- DRAG & DROP OVERLAY -->
+    <div class="drop-overlay" id="drop-overlay">
+      <div class="drop-icon">&#8681;</div>
+      <div class="drop-text">Suelta el archivo de telemetría .BIN aquí</div>
+    </div>
+  </div>
+
+  <!-- Vendor JS (Local) -->
+  <script src="/static/vendor/leaflet.js"></script>
+  <script src="/static/vendor/uPlot.iife.min.js"></script>
+
+  <!-- Studio App Master JS -->
+  <script type="module" src="/static/js/app.js"></script>
+</body>
+</html>
