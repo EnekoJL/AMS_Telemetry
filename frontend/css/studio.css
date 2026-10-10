@@ -88,6 +88,46 @@ html, body {
   border: 1px solid rgba(255, 0, 127, 0.45);
 }
 
+/* VIEW TABS IN HEADER */
+.view-tabs {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: 12px;
+}
+
+.view-tab-btn {
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-muted);
+  padding: 5px 12px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  border-radius: 6px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.15s ease;
+}
+
+.view-tab-btn:hover {
+  background: var(--bg-card-hover);
+  color: var(--text-bright);
+}
+
+.view-tab-btn.active {
+  background: rgba(0, 255, 136, 0.12);
+  border-color: var(--accent-green);
+  color: var(--accent-green);
+  box-shadow: 0 0 10px rgba(0, 255, 136, 0.25);
+}
+
+.tab-icon {
+  font-size: 13px;
+}
+
 .session-chips {
   display: flex;
   align-items: center;
@@ -172,6 +212,22 @@ html, body {
   position: relative;
 }
 
+/* INDIVIDUAL STUDIO VIEWS */
+.studio-view {
+  display: none;
+  flex: 1 1 auto;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  position: relative;
+  overflow: hidden;
+}
+
+.studio-view.active {
+  display: flex;
+  flex-direction: column;
+}
+
 /* TOP VIEW: MAP + TELEMETRY HUD */
 .map-view-container {
   flex: 1 1 auto;
@@ -195,7 +251,6 @@ html, body {
   background: #080c14 !important;
 }
 
-/* Leaflet layer control in dark theme */
 .leaflet-control-layers {
   background: var(--bg-card) !important;
   color: var(--text-main) !important;
@@ -339,7 +394,7 @@ html, body {
   color: var(--text-muted);
 }
 
-/* BOTTOM SECTION: TELEMETRY CHARTS */
+/* BOTTOM SECTION: TELEMETRY CHARTS (TRACK VIEW) */
 .charts-view-container {
   flex: 0 0 250px;
   height: 250px;
@@ -424,6 +479,149 @@ html, body {
   bottom: 0;
   width: 100%;
   height: 100%;
+}
+
+/* =========================================================================
+ * MULTI-CHANNEL TELEMETRY GRAPHS VIEW (MoTeC / AiM Motorsport Style)
+ * ========================================================================= */
+.multi-graphs-scroll-wrapper {
+  flex: 1 1 auto;
+  width: 100%;
+  height: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 12px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  background: var(--bg-darkest);
+}
+
+.multi-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--bg-panel);
+  border: 1px solid var(--border-subtle);
+  border-radius: 6px;
+  padding: 8px 14px;
+}
+
+.channel-status-pills {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.pill-label {
+  font-size: 10px;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+
+.ch-status-pill {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 4px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-muted);
+}
+
+.ch-status-pill.active {
+  color: var(--accent-green);
+  border-color: var(--accent-green);
+  background: rgba(0, 255, 136, 0.1);
+  box-shadow: 0 0 6px rgba(0, 255, 136, 0.2);
+}
+
+.multi-chart-card {
+  background: var(--bg-panel);
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  padding: 10px 14px 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+}
+
+.multi-chart-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+  border-bottom: 1px solid var(--border-subtle);
+  padding-bottom: 6px;
+}
+
+.multi-chart-title-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.multi-chart-title {
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: var(--text-bright);
+}
+
+.multi-readouts-group {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.readout-item {
+  display: flex;
+  align-items: baseline;
+  gap: 5px;
+  font-family: var(--font-mono);
+}
+
+.readout-label {
+  font-size: 10px;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+.readout-val {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-bright);
+}
+
+.multi-chart-body {
+  width: 100%;
+  height: 160px;
+  position: relative;
+  overflow: hidden;
+}
+
+.uplot-wrapper {
+  width: 100%;
+  height: 100%;
+}
+
+.chart-empty-msg {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  font-size: 12px;
+  color: var(--text-muted);
+  font-style: italic;
+  border: 1px dashed var(--border-subtle);
+  border-radius: 6px;
 }
 
 /* Hide uPlot default DOM legend table */

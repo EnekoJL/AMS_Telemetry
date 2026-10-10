@@ -23,7 +23,6 @@ export class TelemetryHUD {
     // Live HUD elements
     this.speedKmhEl = document.getElementById("hud-speed-kmh");
     this.speedMsEl = document.getElementById("hud-speed-ms");
-    this.metricSpeedEl = document.getElementById("hud-metric-speed");
     this.distEl = document.getElementById("hud-dist");
     this.utcEl = document.getElementById("hud-utc");
     this.accelEl = document.getElementById("hud-accel");
@@ -45,14 +44,13 @@ export class TelemetryHUD {
   updateInstant(point) {
     if (!point) return;
 
-    // Big Speed Gauge
+    // Big Primary Speed Gauge
     if (this.speedKmhEl) this.speedKmhEl.textContent = point.speed_kmh.toFixed(1);
     if (this.speedMsEl) this.speedMsEl.textContent = `${point.speed_ms.toFixed(1)} m/s`;
 
-    // Digital Grid Metrics
-    if (this.metricSpeedEl) this.metricSpeedEl.textContent = `${point.speed_kmh.toFixed(1)} km/h`;
+    // Digital Grid Metrics (Secondary duplicate speed removed)
     if (this.distEl) this.distEl.textContent = `${point.cum_dist_m.toFixed(0)} m`;
-    if (this.utcEl) this.utcEl.textContent = point.utc_time;
+    if (this.utcEl) this.utcEl.textContent = point.utc_time || "—";
 
     if (this.accelEl) {
       const g = point.accel_g || 0.0;

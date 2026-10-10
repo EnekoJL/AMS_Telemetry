@@ -21,6 +21,16 @@
           AMS TELEMETRY STUDIO
           <span class="badge-tag">STM32 BLACK-BOX</span>
         </div>
+
+        <!-- VIEW TABS SELECTOR -->
+        <div class="view-tabs">
+          <button class="view-tab-btn active" id="tab-btn-track" data-view="track">
+            <span class="tab-icon">&#9678;</span> Pista & GPS
+          </button>
+          <button class="view-tab-btn" id="tab-btn-graphs" data-view="graphs">
+            <span class="tab-icon">&#8801;</span> Gráficos de Telemetría
+          </button>
+        </div>
       </div>
 
       <!-- SESSION SUMMARY CHIPS -->
@@ -56,103 +66,240 @@
         <button class="btn" id="btn-load-sample" title="Cargar sesión de referencia de Motorland Aragón">
           Muestra Aragón
         </button>
-        <button class="btn btn-primary" id="btn-upload" title="Subir archivo .bin de la microSD">
-          Cargar Log .BIN
+        <button class="btn btn-primary" id="btn-upload" title="Subir archivo .bin de la microSD o CSVs de telemetría">
+          Cargar Archivos (.BIN / .CSV)
         </button>
-        <input type="file" id="file-input" accept=".bin" style="display: none;" />
+        <input type="file" id="file-input" accept=".bin,.csv" multiple style="display: none;" />
       </div>
     </header>
 
     <!-- MAIN WORKSPACE -->
     <main class="workspace-grid">
-      <!-- UPPER SECTION: TRACK MAP + TELEMETRY HUD -->
-      <section class="map-view-container">
-        <div id="track-map"></div>
+      <!-- VIEW 1: TRACK & GPS SATELLITE VIEW -->
+      <div class="studio-view active" id="view-track">
+        <!-- UPPER SECTION: TRACK MAP + TELEMETRY HUD -->
+        <section class="map-view-container">
+          <div id="track-map"></div>
 
-        <!-- TELEMETRY HUD SIDEBAR -->
-        <aside class="telemetry-hud">
-          <div class="hud-panel-title">
-            <span>Telemetría en Vivo</span>
-            <div class="live-dot" title="Sincronizado a 60 FPS"></div>
+          <!-- TELEMETRY HUD SIDEBAR -->
+          <aside class="telemetry-hud">
+            <div class="hud-panel-title">
+              <span>Telemetría en Vivo</span>
+              <div class="live-dot" title="Sincronizado a 60 FPS"></div>
+            </div>
+
+            <!-- PRIMARY SPEED GAUGE -->
+            <div class="gauge-card-big">
+              <div class="metric-cell-label">Velocidad Instantánea</div>
+              <div style="display: flex; align-items: baseline;">
+                <span class="gauge-val-big" id="hud-speed-kmh">0.0</span>
+                <span class="gauge-unit">km/h</span>
+              </div>
+              <div class="gauge-subvalue" id="hud-speed-ms">0.0 m/s</div>
+            </div>
+
+            <!-- DIGITAL METRICS GRID (CLEANED UP: DUPLICATE SPEED REMOVED) -->
+            <div class="hud-metrics-grid">
+              <div class="metric-cell">
+                <div class="metric-cell-label">Distancia Recorrida</div>
+                <div class="metric-cell-value" id="hud-dist" style="color: var(--accent-pink);">0 m</div>
+              </div>
+              <div class="metric-cell">
+                <div class="metric-cell-label">Aceleración Long.</div>
+                <div class="metric-cell-value" id="hud-accel">0.00 G</div>
+              </div>
+              <div class="metric-cell">
+                <div class="metric-cell-label">Rumbo / Heading</div>
+                <div class="metric-cell-value" id="hud-course">0° (N)</div>
+              </div>
+              <div class="metric-cell">
+                <div class="metric-cell-label">Hora UTC (GPS)</div>
+                <div class="metric-cell-value" id="hud-utc" style="font-size: 13px;">—</div>
+              </div>
+            </div>
+
+            <!-- SPEED GRADIENT LEGEND -->
+            <div class="speed-legend-box">
+              <div class="metric-cell-label">Gradiente de Velocidad en Trazado</div>
+              <div class="legend-bar"></div>
+              <div class="legend-labels">
+                <span>Lenta / Frenada</span>
+                <span>Media</span>
+                <span>Punta / Recta</span>
+              </div>
+            </div>
+          </aside>
+        </section>
+
+        <!-- LOWER SECTION: TELEMETRY CURVES (LINKED HOVER) -->
+        <section class="charts-view-container">
+          <div class="chart-toolbar">
+            <div class="chart-title">
+              Canal de Telemetría: Velocidad
+              <span class="chart-channel-pill">LOG_SRC_GPS_RMC (0x30)</span>
+            </div>
+
+            <div class="chart-axis-toggles">
+              <button class="btn" id="btn-reset-zoom" style="padding: 2px 8px; font-size: 10px;" title="Restablecer el zoom de la gráfica a escala completa">
+                Restablecer Zoom
+              </button>
+              <span style="font-size: 10px; color: var(--text-muted); margin-left: 6px; margin-right: 4px;">Eje Horizontal:</span>
+              <button class="toggle-btn active" id="toggle-time">Tiempo (s)</button>
+              <button class="toggle-btn" id="toggle-dist">Distancia (m)</button>
+            </div>
           </div>
 
-          <!-- PRIMARY SPEED GAUGE -->
-          <div class="gauge-card-big">
-            <div class="metric-cell-label">Velocidad Instantánea</div>
-            <div style="display: flex; align-items: baseline;">
-              <span class="gauge-val-big" id="hud-speed-kmh">0.0</span>
-              <span class="gauge-unit">km/h</span>
-            </div>
-            <div class="gauge-subvalue" id="hud-speed-ms">0.0 m/s</div>
+          <div class="chart-stage">
+            <div id="telemetry-plot"></div>
           </div>
+        </section>
+      </div>
 
-          <!-- DIGITAL METRICS GRID -->
-          <div class="hud-metrics-grid">
-            <div class="metric-cell">
-              <div class="metric-cell-label">Velocidad (km/h)</div>
-              <div class="metric-cell-value" id="hud-metric-speed" style="color: var(--accent-green);">0.0 km/h</div>
+      <!-- VIEW 2: MULTI-CHANNEL TELEMETRY GRAPHS (MoTeC / AiM / Bosch Motorsport style) -->
+      <div class="studio-view" id="view-graphs" style="display: none;">
+        <div class="multi-graphs-scroll-wrapper">
+          <!-- TOP TOOLBAR -->
+          <div class="multi-toolbar">
+            <div class="channel-status-pills">
+              <span class="pill-label">Canales en Sesión:</span>
+              <span class="ch-status-pill" id="pill-ch-gps">GPS (0x30)</span>
+              <span class="ch-status-pill" id="pill-ch-adc">ADC Sensores (0x20)</span>
+              <span class="ch-status-pill" id="pill-ch-bms">BMS Batería (0x40)</span>
+              <span class="ch-status-pill" id="pill-ch-inv">Inversor CAN (0x10)</span>
             </div>
-            <div class="metric-cell">
-              <div class="metric-cell-label">Distancia Recorrida</div>
-              <div class="metric-cell-value" id="hud-dist" style="color: var(--accent-pink);">0 m</div>
-            </div>
-            <div class="metric-cell">
-              <div class="metric-cell-label">Aceleración Long.</div>
-              <div class="metric-cell-value" id="hud-accel">0.00 G</div>
-            </div>
-            <div class="metric-cell">
-              <div class="metric-cell-label">Rumbo / Heading</div>
-              <div class="metric-cell-value" id="hud-course">0° (N)</div>
+
+            <div class="multi-actions">
+              <button class="btn" id="btn-reset-multi-zoom" style="padding: 4px 10px; font-size: 11px;">
+                Restablecer Zoom Sincronizado
+              </button>
             </div>
           </div>
 
-          <!-- POSITION & TIMESTAMP -->
-          <div class="metric-cell">
-            <div class="metric-cell-label">Hora UTC (GPS)</div>
-            <div class="metric-cell-value" id="hud-utc" style="font-size: 15px;">—</div>
-          </div>
-
-          <!-- SPEED GRADIENT LEGEND -->
-          <div class="speed-legend-box">
-            <div class="metric-cell-label">Gradiente de Velocidad en Trazado</div>
-            <div class="legend-bar"></div>
-            <div class="legend-labels">
-              <span>Lenta / Frenada</span>
-              <span>Media</span>
-              <span>Punta / Recta</span>
+          <!-- STACKED CHART 1: MOTOR & DYNAMICS -->
+          <div class="multi-chart-card">
+            <div class="multi-chart-header">
+              <div class="multi-chart-title-group">
+                <span class="multi-chart-title">1. Motor & Dinámica</span>
+                <span class="chart-channel-pill">GPS + INVERSOR SEVCON</span>
+              </div>
+              <div class="multi-readouts-group">
+                <div class="readout-item">
+                  <span class="readout-label">Velocidad:</span>
+                  <span class="readout-val" id="readout-speed" style="color: var(--accent-green);">—</span>
+                </div>
+                <div class="readout-item">
+                  <span class="readout-label">Motor:</span>
+                  <span class="readout-val" id="readout-rpm" style="color: var(--accent-pink);">—</span>
+                </div>
+                <div class="readout-item">
+                  <span class="readout-label">Par:</span>
+                  <span class="readout-val" id="readout-torque" style="color: var(--accent-yellow);">—</span>
+                </div>
+              </div>
+            </div>
+            <div class="multi-chart-body">
+              <div id="plot-dynamics" class="uplot-wrapper"></div>
             </div>
           </div>
-        </aside>
-      </section>
 
-      <!-- LOWER SECTION: TELEMETRY CURVES (LINKED HOVER) -->
-      <section class="charts-view-container">
-        <div class="chart-toolbar">
-          <div class="chart-title">
-            Canal de Telemetría: Velocidad
-            <span class="chart-channel-pill">LOG_SRC_GPS_RMC (0x30)</span>
+          <!-- STACKED CHART 2: SUSPENSIONS -->
+          <div class="multi-chart-card">
+            <div class="multi-chart-header">
+              <div class="multi-chart-title-group">
+                <span class="multi-chart-title">2. Suspensiones & Chasis</span>
+                <span class="chart-channel-pill">ADC LINEAR POTS (0x20)</span>
+              </div>
+              <div class="multi-readouts-group">
+                <div class="readout-item">
+                  <span class="readout-label">Horquilla Delantera:</span>
+                  <span class="readout-val" id="readout-fork" style="color: var(--accent-green);">—</span>
+                </div>
+                <div class="readout-item">
+                  <span class="readout-label">Amortiguador Trasero:</span>
+                  <span class="readout-val" id="readout-shock" style="color: #ff8800;">—</span>
+                </div>
+                <div class="readout-item">
+                  <span class="readout-label">Línea 12V:</span>
+                  <span class="readout-val" id="readout-batt12" style="color: var(--text-muted);">—</span>
+                </div>
+              </div>
+            </div>
+            <div class="multi-chart-body">
+              <div id="plot-suspension" class="uplot-wrapper"></div>
+            </div>
           </div>
 
-          <div class="chart-axis-toggles">
-            <button class="btn" id="btn-reset-zoom" style="padding: 2px 8px; font-size: 10px;" title="Restablecer el zoom de la gráfica a escala completa">
-              Restablecer Zoom
-            </button>
-            <span style="font-size: 10px; color: var(--text-muted); margin-left: 6px; margin-right: 4px;">Eje Horizontal:</span>
-            <button class="toggle-btn active" id="toggle-time">Tiempo (s)</button>
-            <button class="toggle-btn" id="toggle-dist">Distancia (m)</button>
+          <!-- STACKED CHART 3: BMS HV BATTERY -->
+          <div class="multi-chart-card">
+            <div class="multi-chart-header">
+              <div class="multi-chart-title-group">
+                <span class="multi-chart-title">3. Batería HV & Potencia (BMS)</span>
+                <span class="chart-channel-pill">LTC6813 SPI (0x40)</span>
+              </div>
+              <div class="multi-readouts-group">
+                <div class="readout-item">
+                  <span class="readout-label">Tensión Pack:</span>
+                  <span class="readout-val" id="readout-pack-v" style="color: var(--accent-green);">—</span>
+                </div>
+                <div class="readout-item">
+                  <span class="readout-label">Corriente Pack:</span>
+                  <span class="readout-val" id="readout-pack-i" style="color: var(--accent-pink);">—</span>
+                </div>
+                <div class="readout-item">
+                  <span class="readout-label">SoC:</span>
+                  <span class="readout-val" id="readout-soc" style="color: var(--text-bright);">—</span>
+                </div>
+                <div class="readout-item">
+                  <span class="readout-label">Celdas Min / Max:</span>
+                  <span class="readout-val" id="readout-cell-min" style="color: var(--text-muted);">—</span>
+                  <span style="color: var(--text-muted);">/</span>
+                  <span class="readout-val" id="readout-cell-max" style="color: var(--text-muted);">—</span>
+                </div>
+              </div>
+            </div>
+            <div class="multi-chart-body">
+              <div id="plot-battery" class="uplot-wrapper"></div>
+            </div>
+          </div>
+
+          <!-- STACKED CHART 4: THERMALS -->
+          <div class="multi-chart-card">
+            <div class="multi-chart-header">
+              <div class="multi-chart-title-group">
+                <span class="multi-chart-title">4. Térmicas & Temperaturas</span>
+                <span class="chart-channel-pill">MOT / INV / BMS / STM32</span>
+              </div>
+              <div class="multi-readouts-group">
+                <div class="readout-item">
+                  <span class="readout-label">Motor:</span>
+                  <span class="readout-val" id="readout-temp-mot" style="color: var(--accent-pink);">—</span>
+                </div>
+                <div class="readout-item">
+                  <span class="readout-label">Inversor:</span>
+                  <span class="readout-val" id="readout-temp-inv" style="color: #ff8800;">—</span>
+                </div>
+                <div class="readout-item">
+                  <span class="readout-label">Batería Máx:</span>
+                  <span class="readout-val" id="readout-temp-bms" style="color: var(--accent-yellow);">—</span>
+                </div>
+                <div class="readout-item">
+                  <span class="readout-label">MCU STM32:</span>
+                  <span class="readout-val" id="readout-temp-mcu" style="color: var(--accent-green);">—</span>
+                </div>
+              </div>
+            </div>
+            <div class="multi-chart-body">
+              <div id="plot-thermals" class="uplot-wrapper"></div>
+            </div>
           </div>
         </div>
-
-        <div class="chart-stage">
-          <div id="telemetry-plot"></div>
-        </div>
-      </section>
+      </div>
     </main>
 
     <!-- DRAG & DROP OVERLAY -->
     <div class="drop-overlay" id="drop-overlay">
       <div class="drop-icon">&#8681;</div>
-      <div class="drop-text">Suelta el archivo de telemetría .BIN aquí</div>
+      <div class="drop-text">Suelta los archivos de telemetría (.BIN o .CSV) aquí</div>
     </div>
   </div>
 
