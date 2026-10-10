@@ -687,3 +687,27 @@ html, body {
   font-weight: 700;
   color: var(--text-bright);
 }
+
+/* =========================================================================
+ * UPLOT DRAG ZOOM SELECTION & CURSOR STYLING (MOTORSPORT NEON GREEN PRE-BOX)
+ * ========================================================================= */
+.u-select {
+  background: rgba(0, 255, 136, 0.22) !important;
+  border-left: 2px solid var(--accent-green) !important;
+  border-right: 2px solid var(--accent-green) !important;
+  border-top: 1.5px dashed rgba(0, 255, 136, 0.7) !important;
+  border-bottom: 1.5px dashed rgba(0, 255, 136, 0.7) !important;
+  box-shadow: 0 0 16px rgba(0, 255, 136, 0.35) !important;
+  position: absolute !important;
+  pointer-events: none !important;
+  z-index: 100 !important;
+}
+
+.u-hz .u-cursor-x, .u-vt .u-cursor-y {
+  border-right: 1.5px dashed var(--accent-pink) !important;
+}
+
+.u-hz .u-cursor-y, .u-vt .u-cursor-x {
+  border-bottom: 1.5px dashed var(--accent-pink) !important;
+}
+
