@@ -2,12 +2,12 @@
 
 import pytest
 
-from ams_log_parser.application.registry import DecoderRegistry
-from ams_log_parser.domain.decoders.file_header import FileHeaderPayloadDecoder
-from ams_log_parser.domain.decoders.gps import GpsPayloadDecoder
-from ams_log_parser.domain.decoders.stats import StatsPayloadDecoder
-from ams_log_parser.domain.enums import LogSourceId
-from ams_log_parser.domain.models import LogRecordHeader
+from AMS_Parser.application.registry import DecoderRegistry
+from AMS_Parser.domain.decoders.file_header import FileHeaderPayloadDecoder
+from AMS_Parser.domain.decoders.gps import GpsPayloadDecoder
+from AMS_Parser.domain.decoders.stats import StatsPayloadDecoder
+from AMS_Parser.domain.enums import LogSourceId
+from AMS_Parser.domain.models import LogRecordHeader
 from tests.conftest import make_file_header_payload, make_stats_payload
 
 

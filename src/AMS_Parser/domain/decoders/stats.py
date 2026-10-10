@@ -1,8 +1,8 @@
 """Decoder for LOG_SRC_LOGGER_STATS (0xF0) records."""
 
 import struct
-from ams_log_parser.domain.enums import LogSourceId
-from ams_log_parser.domain.models import LogRecordHeader, LoggerStatsRecord
+from AMS_Parser.domain.enums import LogSourceId
+from AMS_Parser.domain.models import LogRecordHeader, LoggerStatsRecord
 
 
 class StatsPayloadDecoder:

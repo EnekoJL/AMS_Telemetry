@@ -4,15 +4,15 @@ from pathlib import Path
 from typing import Iterator
 import pytest
 
-from ams_log_parser.application.registry import DecoderRegistry
-from ams_log_parser.application.use_cases import ParseBinaryLogUseCase
-from ams_log_parser.domain.enums import (
+from AMS_Parser.application.registry import DecoderRegistry
+from AMS_Parser.application.use_cases import ParseBinaryLogUseCase
+from AMS_Parser.domain.enums import (
     LOG_BLOCK_SIZE_B,
     LOG_HEADER_SIZE_B,
     LogSourceId,
 )
-from ams_log_parser.domain.models import GpsRecord
-from ams_log_parser.ports.reader_port import BinaryReaderPort
+from AMS_Parser.domain.models import GpsRecord
+from AMS_Parser.ports.reader_port import BinaryReaderPort
 from tests.conftest import (
     make_file_header_payload,
     make_gps_payload,

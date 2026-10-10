@@ -1,8 +1,8 @@
 """Decoder for LOG_SRC_FILE_HEADER (0x01) records."""
 
 import struct
-from ams_log_parser.domain.enums import LogSourceId
-from ams_log_parser.domain.models import FileHeaderRecord, LogRecordHeader
+from AMS_Parser.domain.enums import LogSourceId
+from AMS_Parser.domain.models import FileHeaderRecord, LogRecordHeader
 
 
 class FileHeaderPayloadDecoder:

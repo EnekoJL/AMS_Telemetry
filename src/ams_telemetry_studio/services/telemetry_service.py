@@ -5,10 +5,10 @@ import math
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple, Union
 
-from ams_log_parser.adapters.file_reader import ChunkedBinaryReaderAdapter
-from ams_log_parser.application.registry import DecoderRegistry
-from ams_log_parser.application.use_cases import ParseBinaryLogUseCase
-from ams_log_parser.domain.models import GpsRecord
+from AMS_Parser.adapters.file_reader import ChunkedBinaryReaderAdapter
+from AMS_Parser.application.registry import DecoderRegistry
+from AMS_Parser.application.use_cases import ParseBinaryLogUseCase
+from AMS_Parser.domain.models import GpsRecord
 from ams_telemetry_studio.models import (
     AdcPointDTO,
     BmsPointDTO,

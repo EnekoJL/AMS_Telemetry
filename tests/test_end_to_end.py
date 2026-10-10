@@ -4,10 +4,10 @@ import csv
 from pathlib import Path
 import pytest
 
-from ams_log_parser.adapters.csv_exporter import CsvGpsExporterAdapter
-from ams_log_parser.adapters.file_reader import ChunkedBinaryReaderAdapter
-from ams_log_parser.application.registry import DecoderRegistry
-from ams_log_parser.application.use_cases import ParseBinaryLogUseCase
+from AMS_Parser.adapters.csv_exporter import CsvGpsExporterAdapter
+from AMS_Parser.adapters.file_reader import ChunkedBinaryReaderAdapter
+from AMS_Parser.application.registry import DecoderRegistry
+from AMS_Parser.application.use_cases import ParseBinaryLogUseCase
 
 
 def test_real_log_file_ingestion(tmp_path: Path):

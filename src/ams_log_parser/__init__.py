@@ -1,3 +1,7 @@
-"""AMS Log Parser — Hexagonal Architecture Engine for binary flight logs."""
+"""Backward-compatibility module alias for AMS_Parser."""
 
-__version__ = "0.1.0"
+import sys
+import AMS_Parser
+
+sys.modules["ams_log_parser"] = AMS_Parser
+from AMS_Parser import *  # noqa: F401, F403

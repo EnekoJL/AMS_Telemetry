@@ -4,7 +4,7 @@ import csv
 from pathlib import Path
 from typing import Iterable
 
-from ams_log_parser.domain.models import GpsRecord
+from AMS_Parser.domain.models import GpsRecord
 
 
 class CsvGpsExporterAdapter:

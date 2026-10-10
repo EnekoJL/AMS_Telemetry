@@ -4,22 +4,22 @@ import struct
 from pathlib import Path
 from typing import List, Optional
 
-from ams_log_parser.application.dtos import ParseResultDTO
-from ams_log_parser.application.registry import DecoderRegistry
-from ams_log_parser.domain.enums import (
+from AMS_Parser.application.dtos import ParseResultDTO
+from AMS_Parser.application.registry import DecoderRegistry
+from AMS_Parser.domain.enums import (
     LOG_BLOCK_SIZE_B,
     LOG_HEADER_SIZE_B,
     LogSourceId,
 )
-from ams_log_parser.domain.models import (
+from AMS_Parser.domain.models import (
     FileHeaderRecord,
     GpsRecord,
     LogRecordHeader,
     LoggerStatsRecord,
     ParsingAudit,
 )
-from ams_log_parser.ports.exporter_port import TelemetryExporterPort
-from ams_log_parser.ports.reader_port import BinaryReaderPort
+from AMS_Parser.ports.exporter_port import TelemetryExporterPort
+from AMS_Parser.ports.reader_port import BinaryReaderPort
 
 
 class ParseBinaryLogUseCase:

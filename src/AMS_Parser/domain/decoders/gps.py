@@ -1,8 +1,8 @@
 """Decoder for LOG_SRC_GPS_RMC (0x30) records."""
 
 import struct
-from ams_log_parser.domain.enums import LogSourceId
-from ams_log_parser.domain.models import GpsRecord, LogRecordHeader
+from AMS_Parser.domain.enums import LogSourceId
+from AMS_Parser.domain.models import GpsRecord, LogRecordHeader
 
 
 class GpsPayloadDecoder:

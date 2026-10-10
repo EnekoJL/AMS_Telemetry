@@ -3,8 +3,8 @@
 from pathlib import Path
 import pytest
 
-from ams_log_parser.adapters.file_reader import ChunkedBinaryReaderAdapter
-from ams_log_parser.domain.enums import LOG_BLOCK_SIZE_B
+from AMS_Parser.adapters.file_reader import ChunkedBinaryReaderAdapter
+from AMS_Parser.domain.enums import LOG_BLOCK_SIZE_B
 
 
 def test_reader_empty_file(tmp_path: Path):

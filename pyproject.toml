@@ -22,8 +22,10 @@ dev = [
 ]
 
 [project.scripts]
-ams-log-parser = "ams_log_parser.main:main"
-ams-telemetry-studio = "ams_telemetry_studio.app:main"
+ams-parser = "AMS_Parser.main:main"
+AMS_Parser = "AMS_Parser.main:main"
+ams-telemetry = "ams_telemetry_studio.app:main"
+AMS_Telemetry = "ams_telemetry_studio.app:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]

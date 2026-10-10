@@ -5,12 +5,12 @@ from pathlib import Path
 import sys
 from typing import Optional, Sequence
 
-from ams_log_parser.adapters.csv_exporter import CsvGpsExporterAdapter
-from ams_log_parser.adapters.file_reader import ChunkedBinaryReaderAdapter
-from ams_log_parser.application.dtos import ParseResultDTO
-from ams_log_parser.application.registry import DecoderRegistry
-from ams_log_parser.application.use_cases import ParseBinaryLogUseCase
-from ams_log_parser.domain.enums import LogSourceId
+from AMS_Parser.adapters.csv_exporter import CsvGpsExporterAdapter
+from AMS_Parser.adapters.file_reader import ChunkedBinaryReaderAdapter
+from AMS_Parser.application.dtos import ParseResultDTO
+from AMS_Parser.application.registry import DecoderRegistry
+from AMS_Parser.application.use_cases import ParseBinaryLogUseCase
+from AMS_Parser.domain.enums import LogSourceId
 
 
 def build_arg_parser() -> argparse.ArgumentParser:
@@ -44,7 +44,7 @@ def format_summary(result: ParseResultDTO) -> str:
     audit = result.audit
     lines = []
     lines.append("=" * 80)
-    lines.append(" AMS LOG PARSER — TELEMETRY INGESTION REPORT")
+    lines.append(" AMS_PARSER — TELEMETRY INGESTION REPORT")
     lines.append("=" * 80)
     lines.append(f" File path:       {audit.source_file}")
     lines.append(f" File size:       {audit.file_size_bytes:,} bytes ({audit.file_size_bytes / 1024:.1f} KB)")

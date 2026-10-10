@@ -2,10 +2,10 @@
 
 from typing import Dict, Optional
 
-from ams_log_parser.domain.decoders.file_header import FileHeaderPayloadDecoder
-from ams_log_parser.domain.decoders.gps import GpsPayloadDecoder
-from ams_log_parser.domain.decoders.stats import StatsPayloadDecoder
-from ams_log_parser.ports.decoder_port import PayloadDecoderPort
+from AMS_Parser.domain.decoders.file_header import FileHeaderPayloadDecoder
+from AMS_Parser.domain.decoders.gps import GpsPayloadDecoder
+from AMS_Parser.domain.decoders.stats import StatsPayloadDecoder
+from AMS_Parser.ports.decoder_port import PayloadDecoderPort
 
 
 class DecoderRegistry:

@@ -2,9 +2,9 @@
 
 import pytest
 
-from ams_log_parser.domain.decoders.gps import GpsPayloadDecoder
-from ams_log_parser.domain.enums import LogSourceId
-from ams_log_parser.domain.models import LogRecordHeader
+from AMS_Parser.domain.decoders.gps import GpsPayloadDecoder
+from AMS_Parser.domain.enums import LogSourceId
+from AMS_Parser.domain.models import LogRecordHeader
 from tests.conftest import make_gps_payload
 
 

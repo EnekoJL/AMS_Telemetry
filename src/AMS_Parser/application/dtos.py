@@ -4,7 +4,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import List, Optional
 
-from ams_log_parser.domain.models import (
+from AMS_Parser.domain.models import (
     FileHeaderRecord,
     GpsRecord,
     LoggerStatsRecord,

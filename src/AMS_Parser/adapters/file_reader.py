@@ -4,7 +4,7 @@ import os
 from pathlib import Path
 from typing import Iterator
 
-from ams_log_parser.domain.enums import LOG_BLOCK_SIZE_B
+from AMS_Parser.domain.enums import LOG_BLOCK_SIZE_B
 
 
 class ChunkedBinaryReaderAdapter:

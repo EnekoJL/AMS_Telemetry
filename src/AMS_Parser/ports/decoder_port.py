@@ -2,7 +2,7 @@
 
 from typing import Any, Protocol
 
-from ams_log_parser.domain.models import LogRecordHeader
+from AMS_Parser.domain.models import LogRecordHeader
 
 
 class PayloadDecoderPort(Protocol):

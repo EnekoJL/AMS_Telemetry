@@ -11,8 +11,8 @@
 
 **AMS Telemetry** es la suite de análisis de datos y telemetría de competición para el prototipo de moto eléctrica de **Araba Motorsport (AMS)**. Permite ingerir, decodificar y correlacionar registros de alta frecuencia generados por el microcontrolador STM32F469 sobre la tarjeta microSD (caja negra):
 
-1. **CLI Headless Parser**: Motor de streaming de alto rendimiento basado en arquitectura hexagonal que decodifica ficheros binarios heterogéneos (`.bin`) a ficheros CSV limpios sin desbordamiento de memoria ($O(1)$ RAM).
-2. **Telemetry Studio Web Dashboard**: Aplicación interactiva de telemetría de competición con estética motorsport oscura, trazado satélite vectorial en alta definición y panel vertical de 4 gráficos apilados y sincronizados a 60 FPS (uPlot).
+1. **CLI Headless Parser (AMS_Parser)**: Motor de streaming de alto rendimiento basado en arquitectura hexagonal que decodifica ficheros binarios heterogéneos (`.bin`) a ficheros CSV limpios sin desbordamiento de memoria ($O(1)$ RAM).
+2. **AMS Telemetry Studio (Web Dashboard)**: Aplicación interactiva de telemetría de competición con estética motorsport oscura, trazado satélite vectorial en alta definición y panel vertical de 4 gráficos apilados y sincronizados a 60 FPS (uPlot).
 
 ---
 
@@ -84,10 +84,10 @@ Genera:
 - `telemetry/bms_battery.csv` (10 Hz / 100 ms - Pack V, I, SoC, celdas min/max/temp).
 - `telemetry/inverter_can.csv` (50 Hz / 20 ms - Motor RPM, temperaturas, par Nm).
 
-### 3. Parser CLI Headless (Conversión a CSV)
+### 3. Parser CLI Headless — AMS_Parser (Conversión a CSV)
 
 ```bash
-# Decodificar log binario y exportar a CSV
+# Decodificar log binario con AMS_Parser y exportar a CSV
 python3 main.py -i data/sample/20261010_144951.bin -o ./output
 ```
 
@@ -124,7 +124,7 @@ tools/AMS_Telemetry/
 ├── pyproject.toml                     # Configuración del paquete y pytest
 ├── requirements.txt                   # Dependencias de producción y testing
 ├── src/
-│   ├── ams_log_parser/                # Motor de parseo binario (Arquitectura Hexagonal)
+│   ├── AMS_Parser/                # Motor de parseo binario (Arquitectura Hexagonal)
 │   │   ├── domain/                    # Modelos de dominio puros (GpsRecord, LogRecordHeader)
 │   │   ├── ports/                     # Interfaces abstractas (Reader, Decoder, Exporter)
 │   │   ├── application/               # Casos de uso (ParseBinaryLogUseCase, Registry)

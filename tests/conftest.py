@@ -1,7 +1,7 @@
 """Shared fixtures and byte builders for testing."""
 
 import struct
-from ams_log_parser.domain.enums import (
+from AMS_Parser.domain.enums import (
     LOG_BLOCK_SIZE_B,
     LOG_HEADER_SIZE_B,
     LogSourceId,

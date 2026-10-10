@@ -1,9 +1,9 @@
-from ams_log_parser.domain.enums import (
+from AMS_Parser.domain.enums import (
     LOG_BLOCK_SIZE_B,
     LOG_HEADER_SIZE_B,
     LogSourceId,
 )
-from ams_log_parser.domain.models import (
+from AMS_Parser.domain.models import (
     FileHeaderRecord,
     GpsRecord,
     LogRecordHeader,
