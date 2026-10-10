@@ -73,11 +73,11 @@ Abre tu navegador en **[http://localhost:8000](http://localhost:8000)**. Puedes 
 
 ### 2. Generador de Datos Sintéticos
 
-Para pruebas sin hardware físico, el script `tools/generate_mock_telemetry.py` genera ficheros CSV realistas alineados con la ventana temporal del log GPS de referencia:
+Para pruebas sin hardware físico, el script `scripts/generate_mock_telemetry.py` genera ficheros CSV realistas alineados con la ventana temporal del log GPS de referencia:
 
 ```bash
-# Desde la raíz del repositorio AMS_GitHub:
-python3 tools/generate_mock_telemetry.py
+# Desde tools/AMS_Telemetry:
+python3 scripts/generate_mock_telemetry.py
 ```
 Genera:
 - `telemetry/adc_sensors.csv` (25 Hz / 40 ms - Suspensiones, 12V aux, temp STM32).
@@ -148,5 +148,7 @@ tools/AMS_Telemetry/
 ├── data/
 │   └── sample/
 │       └── 20261010_144951.bin        # Log binario de referencia (Motorland Aragón)
+├── scripts/
+│   └── generate_mock_telemetry.py     # Generador de datos sintéticos multi-canal
 └── tests/                             # Suite de pruebas automatizadas (22 tests unitarios e integración)
 ```
