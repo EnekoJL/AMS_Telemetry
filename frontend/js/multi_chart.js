@@ -1,8 +1,51 @@
 /**
  * Multi-Channel Telemetry Synchronized Stacked Charts.
  * MoTeC / AiM / Bosch Motorsport style with 60 FPS linked crosshair,
- * reliable drag-zoom across all channels, and map/HUD synchronization.
+ * dual Y-axes for multi-unit channels, dynamic scale range bounding,
+ * reliable drag-zoom across all channels, and individual fullscreen maximization.
  */
+
+/**
+ * Computes clean min and max boundaries with proportional margin
+ * and round tick step boundaries, avoiding compressed curves.
+ */
+function calcScaleRange(dataMin, dataMax, { forceZeroMin = false, minSpan = 10, padFrac = 0.1, roundStep = 5 } = {}) {
+  if (dataMin == null || isNaN(dataMin) || dataMax == null || isNaN(dataMax)) {
+    return [0, minSpan];
+  }
+  let min = Number(dataMin);
+  let max = Number(dataMax);
+
+  if (forceZeroMin && min >= 0) {
+    min = 0;
+  }
+
+  if (max - min < minSpan) {
+    if (forceZeroMin && min >= 0) {
+      max = min + minSpan;
+    } else {
+      const mid = (max + min) / 2;
+      min = mid - minSpan / 2;
+      max = mid + minSpan / 2;
+    }
+  }
+
+  const span = max - min;
+  const pad = span * padFrac;
+  let rMin = forceZeroMin && min >= 0 ? 0 : min - pad;
+  let rMax = max + pad;
+
+  if (roundStep > 0) {
+    rMin = Math.floor(rMin / roundStep) * roundStep;
+    rMax = Math.ceil(rMax / roundStep) * roundStep;
+  }
+
+  if (forceZeroMin && min >= 0) {
+    rMin = 0;
+  }
+
+  return [rMin, rMax];
+}
 
 export class MultiTelemetryCharts {
   constructor(containerId, onPointHover) {
@@ -15,6 +58,7 @@ export class MultiTelemetryCharts {
     this.xMin = 0;
     this.xMax = 100;
     this._zooming = false;
+    this.maximizedKey = null;
 
     // Numerical readout element caches
     this.readouts = {
@@ -34,6 +78,74 @@ export class MultiTelemetryCharts {
       tempBms: document.getElementById("readout-temp-bms"),
       tempMcu: document.getElementById("readout-temp-mcu"),
     };
+
+    this.initMaximizeControls();
+  }
+
+  initMaximizeControls() {
+    document.querySelectorAll(".btn-card-maximize").forEach((btn) => {
+      btn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        const chartKey = btn.getAttribute("data-chart");
+        if (chartKey) {
+          this.toggleMaximize(chartKey);
+        }
+      });
+    });
+
+    window.addEventListener("keydown", (e) => {
+      if (e.key === "Escape" && this.maximizedKey) {
+        this.toggleMaximize(this.maximizedKey);
+      }
+    });
+  }
+
+  toggleMaximize(chartKey) {
+    const card = document.getElementById(`card-${chartKey}`);
+    if (!card) return;
+
+    if (this.maximizedKey === chartKey) {
+      // Restore back to normal stacked layout
+      card.classList.remove("is-maximized");
+      this.maximizedKey = null;
+      this.updateMaximizeButton(card, false);
+    } else {
+      // If another card is maximized, restore it first
+      if (this.maximizedKey) {
+        const prevCard = document.getElementById(`card-${this.maximizedKey}`);
+        if (prevCard) {
+          prevCard.classList.remove("is-maximized");
+          this.updateMaximizeButton(prevCard, false);
+        }
+      }
+      card.classList.add("is-maximized");
+      this.maximizedKey = chartKey;
+      this.updateMaximizeButton(card, true);
+    }
+
+    // Immediately re-adjust chart dimensions
+    requestAnimationFrame(() => {
+      this.resize();
+    });
+  }
+
+  updateMaximizeButton(card, isMaximized) {
+    const btn = card.querySelector(".btn-card-maximize");
+    if (!btn) return;
+    const label = btn.querySelector(".btn-maximize-text");
+    if (label) {
+      label.textContent = isMaximized ? "Minimizar" : "Maximizar";
+    }
+    btn.title = isMaximized ? "Restaurar vista normal (Esc)" : "Maximizar gráfico";
+    btn.setAttribute("aria-label", isMaximized ? "Minimizar" : "Maximizar");
+    const svg = btn.querySelector("svg");
+    if (svg) {
+      if (isMaximized) {
+        svg.innerHTML = '<path d="M4 14h6v6M20 10h-6V4M14 10l7-7M10 14l-7 7"></path>';
+      } else {
+        svg.innerHTML = '<path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"></path>';
+      }
+    }
   }
 
   loadData(session) {
@@ -59,6 +171,15 @@ export class MultiTelemetryCharts {
   }
 
   destroy() {
+    if (this.maximizedKey) {
+      const card = document.getElementById(`card-${this.maximizedKey}`);
+      if (card) {
+        card.classList.remove("is-maximized");
+        this.updateMaximizeButton(card, false);
+      }
+      this.maximizedKey = null;
+    }
+
     Object.values(this.charts).forEach((u) => {
       if (u && typeof u.destroy === "function") {
         u.destroy();
@@ -67,7 +188,12 @@ export class MultiTelemetryCharts {
     this.charts = {};
   }
 
-  getContainerWidth() {
+  getContainerWidth(key = null) {
+    if (key && key === this.maximizedKey) {
+      const el = document.getElementById(`plot-${key}`);
+      if (el && el.clientWidth > 0) return el.clientWidth;
+      return Math.max(300, (window.innerWidth || 800) - 48);
+    }
     const parent = document.querySelector(".charts-scroll-container");
     if (parent && parent.clientWidth > 0) {
       return Math.max(300, parent.clientWidth - 48);
@@ -75,9 +201,19 @@ export class MultiTelemetryCharts {
     return Math.max(300, (window.innerWidth || 800) - 48);
   }
 
+  getContainerHeight(key = null) {
+    if (key && key === this.maximizedKey) {
+      const card = document.getElementById(`card-${key}`);
+      const header = card ? card.querySelector(".telemetry-card-header") : null;
+      const headerH = header ? header.offsetHeight : 45;
+      return Math.max(250, (window.innerHeight || 600) - headerH - 52);
+    }
+    return 150;
+  }
+
   zoomAll(min, max) {
     if (this._zooming || min == null || max == null || isNaN(min) || isNaN(max)) return;
-    if (min >= max || (max - min) < 0.5) return;
+    if (min >= max || max - min < 0.5) return;
 
     this._zooming = true;
     try {
@@ -128,7 +264,11 @@ export class MultiTelemetryCharts {
       xData = this.channels.inverter.map((p) => p.rel_time_s);
       rpmData = this.channels.inverter.map((p) => p.motor_rpm);
       if (hasGps) {
-        speedData = this.interpolateSeries(xData, this.channels.gps.map((p) => p.rel_time_s), this.channels.gps.map((p) => p.speed_kmh));
+        speedData = this.interpolateSeries(
+          xData,
+          this.channels.gps.map((p) => p.rel_time_s),
+          this.channels.gps.map((p) => p.speed_kmh)
+        );
       } else {
         speedData = rpmData.map((r) => r / 30.0);
       }
@@ -139,8 +279,8 @@ export class MultiTelemetryCharts {
     }
 
     const opts = {
-      width: this.getContainerWidth(),
-      height: 150,
+      width: this.getContainerWidth("dynamics"),
+      height: this.getContainerHeight("dynamics"),
       cursor: {
         sync: { key: this.syncGroup.key, setSeries: true },
         drag: { x: true, y: false, setScale: true },
@@ -165,30 +305,40 @@ export class MultiTelemetryCharts {
       },
       scales: {
         x: { time: false, min: this.xMin, max: this.xMax },
-        kmh: { auto: true },
-        rpm: { auto: true },
+        kmh: {
+          range: (u, dataMin, dataMax) =>
+            calcScaleRange(dataMin, dataMax, { forceZeroMin: true, minSpan: 40, roundStep: 10 }),
+        },
+        rpm: {
+          range: (u, dataMin, dataMax) =>
+            calcScaleRange(dataMin, dataMax, { forceZeroMin: true, minSpan: 1000, roundStep: 500 }),
+        },
       },
       axes: [
         {
           stroke: "#8b949e",
+          font: "10px monospace",
           grid: { stroke: "#1c283d", width: 1 },
           ticks: { stroke: "#1c283d" },
           values: (u, vals) => vals.map((v) => `${v.toFixed(0)}s`),
         },
         {
           scale: "kmh",
+          side: 3,
           stroke: "#00ff88",
-          size: 55,
+          font: "10px monospace",
+          size: 70,
           grid: { stroke: "#1c283d", width: 1 },
-          values: (u, vals) => `${Math.round(vals)} km/h`,
+          values: (u, vals) => vals.map((v) => (v != null && !isNaN(v) ? `${Math.round(v)} km/h` : "")),
         },
         {
           scale: "rpm",
           side: 1,
           stroke: "#ff007f",
-          size: 55,
+          font: "10px monospace",
+          size: 75,
           grid: { show: false },
-          values: (u, vals) => `${Math.round(vals)}`,
+          values: (u, vals) => vals.map((v) => (v != null && !isNaN(v) ? `${Math.round(v)} RPM` : "")),
         },
       ],
       series: [
@@ -229,8 +379,8 @@ export class MultiTelemetryCharts {
     const shockData = this.channels.adc.map((p) => p.susp_rear_mm);
 
     const opts = {
-      width: this.getContainerWidth(),
-      height: 150,
+      width: this.getContainerWidth("suspension"),
+      height: this.getContainerHeight("suspension"),
       cursor: {
         sync: { key: this.syncGroup.key, setSeries: true },
         drag: { x: true, y: false, setScale: true },
@@ -255,21 +405,27 @@ export class MultiTelemetryCharts {
       },
       scales: {
         x: { time: false, min: this.xMin, max: this.xMax },
-        mm: { auto: true },
+        mm: {
+          range: (u, dataMin, dataMax) =>
+            calcScaleRange(dataMin, dataMax, { forceZeroMin: true, minSpan: 30, roundStep: 10 }),
+        },
       },
       axes: [
         {
           stroke: "#8b949e",
+          font: "10px monospace",
           grid: { stroke: "#1c283d", width: 1 },
           ticks: { stroke: "#1c283d" },
           values: (u, vals) => vals.map((v) => `${v.toFixed(0)}s`),
         },
         {
           scale: "mm",
+          side: 3,
           stroke: "#00ff88",
-          size: 55,
+          font: "10px monospace",
+          size: 65,
           grid: { stroke: "#1c283d", width: 1 },
-          values: (u, vals) => `${Math.round(vals)} mm`,
+          values: (u, vals) => vals.map((v) => (v != null && !isNaN(v) ? `${Math.round(v)} mm` : "")),
         },
       ],
       series: [
@@ -310,8 +466,8 @@ export class MultiTelemetryCharts {
     const packIData = this.channels.bms.map((p) => p.pack_current_a);
 
     const opts = {
-      width: this.getContainerWidth(),
-      height: 150,
+      width: this.getContainerWidth("battery"),
+      height: this.getContainerHeight("battery"),
       cursor: {
         sync: { key: this.syncGroup.key, setSeries: true },
         drag: { x: true, y: false, setScale: true },
@@ -336,30 +492,40 @@ export class MultiTelemetryCharts {
       },
       scales: {
         x: { time: false, min: this.xMin, max: this.xMax },
-        volt: { auto: true },
-        amp: { auto: true },
+        volt: {
+          range: (u, dataMin, dataMax) =>
+            calcScaleRange(dataMin, dataMax, { forceZeroMin: false, minSpan: 20, roundStep: 10 }),
+        },
+        amp: {
+          range: (u, dataMin, dataMax) =>
+            calcScaleRange(dataMin, dataMax, { forceZeroMin: false, minSpan: 30, roundStep: 10 }),
+        },
       },
       axes: [
         {
           stroke: "#8b949e",
+          font: "10px monospace",
           grid: { stroke: "#1c283d", width: 1 },
           ticks: { stroke: "#1c283d" },
           values: (u, vals) => vals.map((v) => `${v.toFixed(0)}s`),
         },
         {
           scale: "volt",
+          side: 3,
           stroke: "#00ff88",
-          size: 55,
+          font: "10px monospace",
+          size: 65,
           grid: { stroke: "#1c283d", width: 1 },
-          values: (u, vals) => `${Math.round(vals)} V`,
+          values: (u, vals) => vals.map((v) => (v != null && !isNaN(v) ? `${Math.round(v)} V` : "")),
         },
         {
           scale: "amp",
           side: 1,
           stroke: "#ff007f",
-          size: 55,
+          font: "10px monospace",
+          size: 65,
           grid: { show: false },
-          values: (u, vals) => `${Math.round(vals)} A`,
+          values: (u, vals) => vals.map((v) => (v != null && !isNaN(v) ? `${Math.round(v)} A` : "")),
         },
       ],
       series: [
@@ -411,15 +577,23 @@ export class MultiTelemetryCharts {
     const motTemp = hasInv ? this.channels.inverter.map((p) => p.motor_temp_c) : xData.map(() => 45.0);
     const invTemp = hasInv ? this.channels.inverter.map((p) => p.inverter_temp_c) : xData.map(() => 40.0);
     const bmsTemp = hasBms
-      ? this.interpolateSeries(xData, this.channels.bms.map((p) => p.rel_time_s), this.channels.bms.map((p) => p.cell_temp_max_c))
+      ? this.interpolateSeries(
+          xData,
+          this.channels.bms.map((p) => p.rel_time_s),
+          this.channels.bms.map((p) => p.cell_temp_max_c)
+        )
       : xData.map(() => 35.0);
     const mcuTemp = hasAdc
-      ? this.interpolateSeries(xData, this.channels.adc.map((p) => p.rel_time_s), this.channels.adc.map((p) => p.mcu_temp_c))
+      ? this.interpolateSeries(
+          xData,
+          this.channels.adc.map((p) => p.rel_time_s),
+          this.channels.adc.map((p) => p.mcu_temp_c)
+        )
       : xData.map(() => 42.0);
 
     const opts = {
-      width: this.getContainerWidth(),
-      height: 150,
+      width: this.getContainerWidth("thermals"),
+      height: this.getContainerHeight("thermals"),
       cursor: {
         sync: { key: this.syncGroup.key, setSeries: true },
         drag: { x: true, y: false, setScale: true },
@@ -444,21 +618,27 @@ export class MultiTelemetryCharts {
       },
       scales: {
         x: { time: false, min: this.xMin, max: this.xMax },
-        celsius: { auto: true },
+        celsius: {
+          range: (u, dataMin, dataMax) =>
+            calcScaleRange(dataMin, dataMax, { forceZeroMin: false, minSpan: 20, roundStep: 5 }),
+        },
       },
       axes: [
         {
           stroke: "#8b949e",
+          font: "10px monospace",
           grid: { stroke: "#1c283d", width: 1 },
           ticks: { stroke: "#1c283d" },
           values: (u, vals) => vals.map((v) => `${v.toFixed(0)}s`),
         },
         {
           scale: "celsius",
+          side: 3,
           stroke: "#ff007f",
-          size: 55,
+          font: "10px monospace",
+          size: 65,
           grid: { stroke: "#1c283d", width: 1 },
-          values: (u, vals) => `${Math.round(vals)} °C`,
+          values: (u, vals) => vals.map((v) => (v != null && !isNaN(v) ? `${Math.round(v)} °C` : "")),
         },
       ],
       series: [
@@ -517,7 +697,8 @@ export class MultiTelemetryCharts {
     // Binary search helper
     const findClosest = (arr) => {
       if (!arr || !arr.length) return null;
-      let low = 0, high = arr.length - 1;
+      let low = 0,
+        high = arr.length - 1;
       while (low <= high) {
         const mid = (low + high) >> 1;
         if (arr[mid].rel_time_s < relTimeS) low = mid + 1;
@@ -570,17 +751,18 @@ export class MultiTelemetryCharts {
   }
 
   setCursorTime(relTimeS) {
-    if (!this.charts.dynamics) return;
-    const u = this.charts.dynamics;
-    const left = u.valToPos(relTimeS, "x");
-    u.setCursor({ left, top: 40 }, false);
+    const target = (this.maximizedKey && this.charts[this.maximizedKey]) || this.charts.dynamics;
+    if (!target) return;
+    const left = target.valToPos(relTimeS, "x");
+    target.setCursor({ left, top: 40 }, false);
   }
 
   resize() {
-    const width = this.getContainerWidth();
-    Object.values(this.charts).forEach((u) => {
+    Object.entries(this.charts).forEach(([key, u]) => {
       if (u && typeof u.setSize === "function") {
-        u.setSize({ width, height: 150 });
+        const width = this.getContainerWidth(key);
+        const height = this.getContainerHeight(key);
+        u.setSize({ width, height });
       }
     });
   }

@@ -143,9 +143,8 @@ export class TelemetryChart {
           stroke: "#8b949e",
           font: "11px monospace",
           grid: { stroke: "#1c283d", width: 1 },
-          ticks: { stroke: "#243048", width: 1 },
-          values: (u, vals) => `${Math.round(vals)} km/h`,
-        },
+          values: (u, vals) =>
+            vals.map((v) => (v != null && !isNaN(v) ? `${Math.round(v)} km/h` : "")),
       ],
       series: [
         {}, // X axis series

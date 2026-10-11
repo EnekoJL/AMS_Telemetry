@@ -146,11 +146,11 @@
 
         <!-- STACKED CHARTS CONTAINER -->
         <div class="charts-scroll-container">
-          <!-- STACKED CHART 1: MOTOR & DYNAMICS -->
-          <div class="telemetry-card">
+          <!-- STACKED CHART 1: DYNAMICS -->
+          <div class="telemetry-card" id="card-dynamics">
             <div class="telemetry-card-header">
               <div class="card-title-group">
-                <span class="card-title">1. Motor & Dinámica</span>
+                <span class="card-title">1. Dinámica</span>
                 <span class="chart-channel-pill">VELOCIDAD GPS + RPM INVERSOR</span>
               </div>
               <div class="card-readouts-group">
@@ -166,6 +166,12 @@
                   <span class="readout-label">Par:</span>
                   <span class="readout-val" id="readout-torque" style="color: var(--accent-yellow);">—</span>
                 </div>
+                <button class="btn-card-maximize" data-chart="dynamics" title="Maximizar / Restaurar gráfico" aria-label="Maximizar">
+                  <svg class="icon-maximize" viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" stroke-width="2" fill="none">
+                    <path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"></path>
+                  </svg>
+                  <span class="btn-maximize-text">Maximizar</span>
+                </button>
               </div>
             </div>
             <div class="telemetry-card-body">
@@ -174,10 +180,10 @@
           </div>
 
           <!-- STACKED CHART 2: SUSPENSIONS -->
-          <div class="telemetry-card">
+          <div class="telemetry-card" id="card-suspension">
             <div class="telemetry-card-header">
               <div class="card-title-group">
-                <span class="card-title">2. Suspensiones & Chasis</span>
+                <span class="card-title">2. Suspensiones</span>
                 <span class="chart-channel-pill">ADC LINEAR POTS (0x20)</span>
               </div>
               <div class="card-readouts-group">
@@ -193,6 +199,12 @@
                   <span class="readout-label">Línea 12V:</span>
                   <span class="readout-val" id="readout-batt12" style="color: var(--text-muted);">—</span>
                 </div>
+                <button class="btn-card-maximize" data-chart="suspension" title="Maximizar / Restaurar gráfico" aria-label="Maximizar">
+                  <svg class="icon-maximize" viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" stroke-width="2" fill="none">
+                    <path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"></path>
+                  </svg>
+                  <span class="btn-maximize-text">Maximizar</span>
+                </button>
               </div>
             </div>
             <div class="telemetry-card-body">
@@ -201,10 +213,10 @@
           </div>
 
           <!-- STACKED CHART 3: BMS HV BATTERY -->
-          <div class="telemetry-card">
+          <div class="telemetry-card" id="card-battery">
             <div class="telemetry-card-header">
               <div class="card-title-group">
-                <span class="card-title">3. Batería HV & Potencia (BMS)</span>
+                <span class="card-title">3. Batería</span>
                 <span class="chart-channel-pill">LTC6813 SPI (0x40)</span>
               </div>
               <div class="card-readouts-group">
@@ -226,6 +238,12 @@
                   <span style="color: var(--text-muted);">/</span>
                   <span class="readout-val" id="readout-cell-max" style="color: var(--text-muted);">—</span>
                 </div>
+                <button class="btn-card-maximize" data-chart="battery" title="Maximizar / Restaurar gráfico" aria-label="Maximizar">
+                  <svg class="icon-maximize" viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" stroke-width="2" fill="none">
+                    <path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"></path>
+                  </svg>
+                  <span class="btn-maximize-text">Maximizar</span>
+                </button>
               </div>
             </div>
             <div class="telemetry-card-body">
@@ -234,10 +252,10 @@
           </div>
 
           <!-- STACKED CHART 4: THERMALS -->
-          <div class="telemetry-card">
+          <div class="telemetry-card" id="card-thermals">
             <div class="telemetry-card-header">
               <div class="card-title-group">
-                <span class="card-title">4. Térmicas & Temperaturas</span>
+                <span class="card-title">4. Temperaturas</span>
                 <span class="chart-channel-pill">MOT / INV / BMS / STM32</span>
               </div>
               <div class="card-readouts-group">
@@ -257,6 +275,12 @@
                   <span class="readout-label">MCU STM32:</span>
                   <span class="readout-val" id="readout-temp-mcu" style="color: var(--accent-green);">—</span>
                 </div>
+                <button class="btn-card-maximize" data-chart="thermals" title="Maximizar / Restaurar gráfico" aria-label="Maximizar">
+                  <svg class="icon-maximize" viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" stroke-width="2" fill="none">
+                    <path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"></path>
+                  </svg>
+                  <span class="btn-maximize-text">Maximizar</span>
+                </button>
               </div>
             </div>
             <div class="telemetry-card-body">
