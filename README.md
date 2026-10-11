@@ -24,25 +24,40 @@
 - **Gradiente Dinámico de Velocidad**: Gradiente continuo en la trazada de pista (Verde Racing ➔ Lima ➔ Dorado ➔ Rosa Racing).
 - **HUD Digital en Vivo**: Indicadores instantáneos de velocidad, RPM, aceleración longitudinal (G), distancia acumulada, tiempo de sesión y coordenadas UTC.
 
-### 2. Multi-Canal Sincronizado (4 Gráficas Apiladas)
+### 2. Multi-Canal Sincronizado (4 Gráficas Apiladas con Ejes Y Duales)
 Cuatro series temporales sincronizadas en el mismo eje de tiempo (`rel_time_s` / `timestamp_ms`):
-- **Gráfico 1: Motor & Dinámica**: Velocidad GPS (`km/h`, Verde Racing `#00ff88`) y Régimen del Motor (`RPM`, Rosa Racing `#ff007f`) en doble eje Y.
-- **Gráfico 2: Suspensiones**: Recorrido de suspensión delantera (horquilla) y trasera (amortiguador) en milivoltios/milímetros.
-- **Gráfico 3: Batería & Alta Tensión**: Tensión total del pack (`V`), corriente consumida/regenerada (`A`) y dispersión/delta de celdas (`mV`).
-- **Gráfico 4: Térmicas**: Temperaturas en tiempo real de motor, inversor, celdas de batería y microcontrolador STM32 (`°C`).
+- **1. Dinámica**:
+  - **Eje Y izquierdo (Verde Neón `#00ff88`)**: Velocidad GPS en `km/h`.
+  - **Eje Y derecho (Rosa Racing `#ff007f`)**: Régimen del motor en `RPM` (escala desacoplada sin interferencia de cuadrículas).
+- **2. Suspensiones**: Recorrido de suspensión delantera (horquilla) y trasera (amortiguador) en milímetros (`mm`).
+- **3. Batería**:
+  - **Eje Y izquierdo (Verde Neón `#00ff88`)**: Tensión total del pack en `V` (con auto-rango dinámico para alta tensión, sin forzar base cero para maximizar la resolución de caídas de tensión).
+  - **Eje Y derecho (Rosa Racing `#ff007f`)**: Corriente del pack en `A` (signo positivo en descarga/tracción, negativo en regeneración/freno).
+- **4. Temperaturas**: Temperaturas en tiempo real del motor, inversor, celdas de batería y microcontrolador STM32 (`°C`).
 
-### 3. Interacción y Zoom Avanzado
-- **Drag-to-Zoom Sincronizado**: Haz clic y arrastra horizontalmente en cualquiera de las 4 gráficas para seleccionar un rango temporal. El recuadro de pre-selección verde neón (`.u-select`) resalta el tramo exacto y todas las gráficas amplían la vista al unísono.
+### 3. Escalas Dinámicas y Rango Inteligente (`calcScaleRange`)
+- **Ajuste Automático Bounding**: Cálculo de límites mín/máx según los datos de la sesión, aplicando un margen proporcional y pasos de división limpios. Evita que señales con valores altos (como el voltaje de batería de 340 V – 400 V) queden comprimidas en una franja estrecha.
+- **Formateo Numérico Riguroso**: Etiquetas de eje con valores enteros y unidades explícitas (`km/h`, `RPM`, `mm`, `V`, `A`, `°C`), garantizando visualización limpia sin artefactos.
+
+### 4. Modo Pantalla Completa / Maximizar Gráfica
+- **Botón `[ ⛶ Maximizar ]` / `[ 🗗 Minimizar ]`**: Presente en la cabecera de cada una de las 4 tarjetas de telemetría.
+- **Ampliación Instantánea a 100% Pantalla**: Al pulsar maximizar, la gráfica seleccionada se expande a pantalla completa (`100vw × 100vh`), redimensionando automáticamente el canvas del gráfico para inspección milimétrica de curvas.
+- **Atajo de Teclado**: Presionar la tecla <kbd>Escape</kbd> restaura inmediatamente la vista stacked original de los 4 canales.
+- **Sincronización Total Conservada**: El modo maximizado mantiene intacto el crosshair sincronizado, la actualización del punto en el mapa y el refresco a 60 FPS del HUD digital.
+
+### 5. Interacción y Zoom Avanzado
+- **Drag-to-Zoom Sincronizado**: Haz clic y arrastra horizontalmente en cualquiera de las gráficas para seleccionar un rango temporal. El recuadro de pre-selección verde neón (`.u-select`) resalta el tramo exacto y todas las gráficas amplían la vista al unísono.
 - **Doble Clic para Resetear**: Doble clic sobre cualquier gráfica restaura el zoom completo de la sesión instantáneamente en todas las series.
 - **Crosshair Bidireccional a 60 FPS**: Mover el cursor sobre cualquier gráfica o sobre la pista actualiza simultáneamente la posición del vehículo (marcador rosa) en el mapa y todos los indicadores del HUD.
 
-### 4. Carga Modular y Desacoplada
+### 6. Carga Modular y Desacoplada
 - Soporte para ficheros `.bin` crudos de la caja negra STM32.
 - Soporte para subida multi-fichero de CSVs independientes (`adc_sensors.csv`, `bms_battery.csv`, `inverter_can.csv`).
 - Interpolación y alineación temporal transparente por `timestamp_ms`. Si falta alguna fuente, el panel se adapta dinámicamente mostrando los canales disponibles.
 
-### 5. 100% Autónomo y Offline
+### 7. 100% Autónomo, Offline y Control de Caché
 - Librerías frontend locales empaquetadas (`Leaflet 1.9.4`, `uPlot 1.6.31`, fuentes e iconos). Operación completa en box o paddock sin conexión a internet.
+- Control de versión de assets (`?v=2.1`) en las importaciones para evitar que los navegadores sirvan archivos `.js` o `.css` obsoletos en caché local.
 
 ---
 
