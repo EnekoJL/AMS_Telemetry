@@ -4,10 +4,10 @@
  * 60 FPS linked crosshair, multi-channel streams, and synchronized zoom.
  */
 
-import { fetchCurrentSession, uploadSessionFile, uploadMultiTelemetryFiles, loadSampleSession } from "./api.js";
-import { TrackMap } from "./map.js";
-import { TelemetryHUD } from "./hud.js";
-import { MultiTelemetryCharts } from "./multi_chart.js";
+import { fetchCurrentSession, uploadSessionFile, uploadMultiTelemetryFiles, loadSampleSession } from "./api.js?v=2.1";
+import { TrackMap } from "./map.js?v=2.1";
+import { TelemetryHUD } from "./hud.js?v=2.1";
+import { MultiTelemetryCharts } from "./multi_chart.js?v=2.1";
 
 class TelemetryStudioApp {
   constructor() {
