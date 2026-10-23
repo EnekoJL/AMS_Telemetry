@@ -14,6 +14,8 @@
 1. **CLI Headless Parser (AMS_Parser)**: Motor de streaming de alto rendimiento basado en arquitectura hexagonal que decodifica ficheros binarios heterogéneos (`.bin`) a ficheros CSV limpios sin desbordamiento de memoria ($O(1)$ RAM).
 2. **AMS Telemetry Studio (Web Dashboard)**: Aplicación interactiva de telemetría de competición con estética motorsport oscura, trazado satélite vectorial en alta definición y panel vertical de 4 gráficos apilados y sincronizados a 60 FPS (uPlot).
 
+Especificación completa (objetivos, formato de entrada, API, UI): [`docs/Specification.md`](docs/Specification.md).
+
 ---
 
 ## 🏎️ Características Principales
