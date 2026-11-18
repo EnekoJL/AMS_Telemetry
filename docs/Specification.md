@@ -1,7 +1,7 @@
 # AMS Telemetry Studio — specification
 
 **Version:** 2.0.0 (2026-10-10) · **Code:** this repo (git submodule
-`tools/AMS_Telemetry/` of `AMS_GitHub`) · **Launch:** `./runTelemetry.sh` or
+`tools/AMS_Telemetry/` of `AMS_GitHub`) · **Launch:** `./linux/runTelemetry.sh` or
 `windows/telemetry/`.
 
 Decodes the SD black-box files (`.bin`) and shows a session on a web
